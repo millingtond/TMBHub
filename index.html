@@ -939,6 +939,8 @@
                 } : null;
             },
             get bypassFirebaseAuth() { return bypassFirebaseAuth; },
+            enableAuthBypass() { setBypassFirebaseAuth(true); },
+            disableAuthBypass() { setBypassFirebaseAuth(false); },
             probeFirestoreRest,
             probeFirestoreRestAuthed
         };
@@ -987,7 +989,16 @@
         let forceAnonymousSignIn = false;
         let isRecoveringAuth = false;
         let hasRetriedAfterPermissionDenied = false;
-        let bypassFirebaseAuth = false;
+        let bypassFirebaseAuth = localStorage.getItem('tmb_bypass_firebase_auth') === '1';
+
+        function setBypassFirebaseAuth(enabled) {
+            bypassFirebaseAuth = Boolean(enabled);
+            if (bypassFirebaseAuth) {
+                localStorage.setItem('tmb_bypass_firebase_auth', '1');
+            } else {
+                localStorage.removeItem('tmb_bypass_firebase_auth');
+            }
+        }
 
         const GROUP_MILESTONES = [
             { id: 'flights', label: 'Flights Booked', icon: 'fa-plane' },
@@ -1060,7 +1071,7 @@
             if (!hasRetriedAfterPermissionDenied && !isRecoveringAuth) {
                 hasRetriedAfterPermissionDenied = true;
                 isRecoveringAuth = true;
-                bypassFirebaseAuth = true;
+                setBypassFirebaseAuth(true);
                 forceAnonymousSignIn = false;
                 showFirestoreError(`Firestore access denied (${source}). Reconnecting without Firebase Auth...`);
 
@@ -1132,9 +1143,10 @@
                     await signInAnonymously(auth);
                 }
                 forceAnonymousSignIn = false;
+                setBypassFirebaseAuth(false);
             } catch (error) {
                 console.warn("Auth failed; continuing without Firebase Auth:", error);
-                bypassFirebaseAuth = true;
+                setBypassFirebaseAuth(true);
                 enterAppShell();
             }
         });
