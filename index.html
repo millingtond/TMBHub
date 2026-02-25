@@ -866,10 +866,12 @@
         import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Environment Check (to ensure it works both in your deployment and this editor preview safely)
-        const isCanvasEnv = typeof __firebase_config !== 'undefined';
+        const hasInjectedFirebaseConfig = typeof __firebase_config !== 'undefined';
+        const useInjectedFirebaseConfig = hasInjectedFirebaseConfig
+            && new URLSearchParams(window.location.search).get('useInjectedFirebase') === '1';
         
         // Firebase config — key is restricted to Firestore, Auth & Token Service APIs only
-        const firebaseConfig = isCanvasEnv ? JSON.parse(__firebase_config) : {
+        const firebaseConfig = useInjectedFirebaseConfig ? JSON.parse(__firebase_config) : {
             apiKey: "AIzaSyBaA9vkJ1V-AbG9_MQgP9KJZ4ELgQ0wNLc",
             authDomain: "mylittleprojects-3ebd5.firebaseapp.com",
             projectId: "mylittleprojects-3ebd5",
@@ -878,6 +880,7 @@
             appId: "1:349781789746:web:76c689bb7c5292a648c02b",
             measurementId: "G-2BHDMGT09Q"
         };
+        window.__TMB_FIREBASE_CONFIG = firebaseConfig;
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
@@ -885,11 +888,11 @@
 
         // Define Collection Path (Safe for both Canvas and Your DB)
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'tmb-hub';
-        const collectionPath = isCanvasEnv
+        const collectionPath = useInjectedFirebaseConfig
             ? `artifacts/${appId}/public/data/tmb_kit_lists`
             : `tmb_kit_lists`;
 
-        const sharedBase = isCanvasEnv ? `artifacts/${appId}/public/data` : `tmb_shared`;
+        const sharedBase = useInjectedFirebaseConfig ? `artifacts/${appId}/public/data` : `tmb_shared`;
         const bagDataRef    = () => doc(db, sharedBase, 'bag_data');
         const paymentsRef   = () => doc(db, sharedBase, 'payments');
         const trainingRef   = () => doc(db, sharedBase, 'training');
