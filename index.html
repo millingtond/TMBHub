@@ -862,7 +862,7 @@
     <!-- Firebase SDK Integration via Modules -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Environment Check (to ensure it works both in your deployment and this editor preview safely)
@@ -939,6 +939,9 @@
         let bagData = {}, paymentsData = {}, trainingData = {}, passportData = {};
         let readinessData = {}, milestonesData = {}, feedbackData = {};
         let selectedActivityType = 'hike';
+        let forceAnonymousSignIn = false;
+        let isRecoveringAuth = false;
+        let hasRetriedAfterPermissionDenied = false;
 
         const GROUP_MILESTONES = [
             { id: 'flights', label: 'Flights Booked', icon: 'fa-plane' },
@@ -980,6 +983,49 @@
         window.openFeedbackModal = openFeedbackModal;
         window.closeFeedbackModal = closeFeedbackModal;
 
+        function showFirestoreError(message) {
+            let banner = document.getElementById('firestore-error-banner');
+            if (!banner) {
+                banner = document.createElement('div');
+                banner.id = 'firestore-error-banner';
+                banner.className = 'fixed top-4 left-1/2 -translate-x-1/2 z-[210] max-w-xl w-[calc(100%-2rem)] bg-red-50 border border-red-300 text-red-800 text-sm px-4 py-3 rounded-xl shadow-lg';
+                document.body.appendChild(banner);
+            }
+            banner.textContent = message;
+            banner.classList.remove('hidden');
+        }
+
+        function clearFirestoreError() {
+            const banner = document.getElementById('firestore-error-banner');
+            if (banner) banner.classList.add('hidden');
+        }
+
+        function isPermissionDenied(error) {
+            return error && (error.code === 'permission-denied' || String(error.code).includes('permission-denied'));
+        }
+
+        function handleFirestoreListenError(error, source) {
+            console.error(`Firestore Listener Error [${source}]:`, error);
+            const listLoader = document.getElementById('list-loader');
+            if (listLoader) listLoader.classList.add('hidden');
+
+            if (!isPermissionDenied(error)) return;
+
+            if (!hasRetriedAfterPermissionDenied && !isRecoveringAuth) {
+                hasRetriedAfterPermissionDenied = true;
+                isRecoveringAuth = true;
+                forceAnonymousSignIn = true;
+                showFirestoreError('Firestore access was denied. Reconnecting with a fresh session...');
+
+                signOut(auth)
+                    .catch((signOutErr) => console.warn('Auth reset sign-out failed:', signOutErr))
+                    .finally(() => { isRecoveringAuth = false; });
+                return;
+            }
+
+            showFirestoreError('Firestore access is still denied. Verify this page is connected to the same Firebase project/database where your Firestore rules were published.');
+        }
+
         // --- 2. AUTHENTICATION & INITIALIZATION ---
         onAuthStateChanged(auth, async (user) => {
             if (user) {
@@ -1002,11 +1048,21 @@
                 renderLoginScreen();
             } else {
                 try {
-                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                        await signInWithCustomToken(auth, __initial_auth_token);
+                    const canUseCustomToken = !forceAnonymousSignIn
+                        && typeof __initial_auth_token !== 'undefined'
+                        && __initial_auth_token;
+
+                    if (canUseCustomToken) {
+                        try {
+                            await signInWithCustomToken(auth, __initial_auth_token);
+                        } catch (tokenError) {
+                            console.warn("Custom token sign-in failed, falling back to anonymous auth:", tokenError);
+                            await signInAnonymously(auth);
+                        }
                     } else {
                         await signInAnonymously(auth);
                     }
+                    forceAnonymousSignIn = false;
                 } catch (error) {
                     console.error("Auth failed:", error);
                     const authLoading = document.getElementById('auth-loading');
@@ -1070,6 +1126,8 @@
             
             unsubSnapshot = onSnapshot(docRef, (docSnap) => {
                 if (listLoader) listLoader.classList.add('hidden');
+                clearFirestoreError();
+                hasRetriedAfterPermissionDenied = false;
                 if (docSnap.exists()) {
                     localKitData = docSnap.data();
                 } else {
@@ -1077,8 +1135,7 @@
                 }
                 renderChecklist();
             }, (error) => {
-                console.error("Firestore Listener Error:", error);
-                if (listLoader) listLoader.classList.add('hidden');
+                handleFirestoreListenError(error, 'kit_list');
             });
 
             // Admin badges — show correct one based on role
@@ -1090,13 +1147,13 @@
                 bagData = snap.exists() ? snap.data() : {};
                 renderBagClaimer();
                 renderBagRoster();
-            });
+            }, error => handleFirestoreListenError(error, 'bag_data'));
 
             if (unsubPayments) unsubPayments();
             unsubPayments = onSnapshot(paymentsRef(), snap => {
                 paymentsData = snap.exists() ? snap.data() : {};
                 renderPayments();
-            });
+            }, error => handleFirestoreListenError(error, 'payments'));
 
             if (unsubTraining) unsubTraining();
             unsubTraining = onSnapshot(trainingRef(), snap => {
@@ -1105,31 +1162,31 @@
                 renderAllActivitiesFeed();
                 renderMyActivities();
                 prefillGoalForm();
-            });
+            }, error => handleFirestoreListenError(error, 'training'));
 
             if (unsubPassport) unsubPassport();
             unsubPassport = onSnapshot(passportRef(), snap => {
                 passportData = snap.exists() ? snap.data() : {};
                 renderPassportChecklist();
-            });
+            }, error => handleFirestoreListenError(error, 'passport'));
 
             if (unsubReadiness) unsubReadiness();
             unsubReadiness = onSnapshot(readinessRef(), snap => {
                 readinessData = snap.exists() ? snap.data() : {};
                 renderReadinessPoll();
-            });
+            }, error => handleFirestoreListenError(error, 'readiness'));
 
             if (unsubMilestones) unsubMilestones();
             unsubMilestones = onSnapshot(milestonesRef(), snap => {
                 milestonesData = snap.exists() ? snap.data() : {};
                 renderMilestones();
-            });
+            }, error => handleFirestoreListenError(error, 'milestones'));
 
             if (unsubFeedback) unsubFeedback();
             unsubFeedback = onSnapshot(feedbackRef(), snap => {
                 feedbackData = snap.exists() ? snap.data() : {};
                 renderFeedbackHub();
-            });
+            }, error => handleFirestoreListenError(error, 'feedback'));
 
             // Fetch live weather (no listener needed — one-off API call)
             fetchWeather();
