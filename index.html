@@ -859,9 +859,6 @@
         </footer>
     </div>
 
-    <!-- Firebase Config (loaded from external file, not committed to git) -->
-    <script src="config.js"></script>
-
     <!-- Firebase SDK Integration via Modules -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -871,8 +868,16 @@
         // Environment Check (to ensure it works both in your deployment and this editor preview safely)
         const isCanvasEnv = typeof __firebase_config !== 'undefined';
         
-        // Use external config.js for deployment, fallback to environment for Canvas preview
-        const firebaseConfig = isCanvasEnv ? JSON.parse(__firebase_config) : FIREBASE_CONFIG;
+        // Firebase config — key is restricted to Firestore, Auth & Token Service APIs only
+        const firebaseConfig = isCanvasEnv ? JSON.parse(__firebase_config) : {
+            apiKey: "AIzaSyBaA9vkJ1V-AbG9_MQgP9KJZ4ELgQ0wNLc",
+            authDomain: "mylittleprojects-3ebd5.firebaseapp.com",
+            projectId: "mylittleprojects-3ebd5",
+            storageBucket: "mylittleprojects-3ebd5.firebasestorage.app",
+            messagingSenderId: "349781789746",
+            appId: "1:349781789746:web:76c689bb7c5292a648c02b",
+            measurementId: "G-2BHDMGT09Q"
+        };
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
