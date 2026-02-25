@@ -1,0 +1,1958 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth" style="scroll-padding-top: 5rem;">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trail Du Mont Blanc 2026</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            200: '#bbf7d0',
+                            300: '#86efac',
+                            400: '#4ade80',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            800: '#166534',
+                            900: '#14532d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .hero-bg {
+            background-image: linear-gradient(rgba(17, 24, 39, 0.7), rgba(17, 24, 39, 0.8)), url('https://images.unsplash.com/photo-1527668752968-14ce70a301bb?q=80&w=2070&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+        }
+        @media (min-width: 768px) {
+            .hero-bg { background-attachment: fixed; }
+        }
+        .login-bg {
+            background-image: linear-gradient(rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.92)), url('https://images.unsplash.com/photo-1590319441479-b2fa34ac0cb1?q=80&w=2070&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+        }
+        /* Day card photo banners */
+        .day-photo {
+            height: 140px;
+            background-size: cover;
+            background-position: center;
+            border-radius: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+        @media (min-width: 640px) { .day-photo { height: 180px; } }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+        .fighter-card {
+            transition: all 0.2s ease-in-out;
+        }
+        .fighter-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(34, 197, 94, 0.4);
+            border-color: #22c55e;
+        }
+        /* Custom Checkbox */
+        .kit-checkbox:checked + div {
+            background-color: #22c55e;
+            border-color: #22c55e;
+        }
+        .kit-checkbox:checked + div svg {
+            opacity: 1;
+            transform: scale(1);
+        }
+        /* Horizontal scroll fade for weather widget */
+        .scroll-fade {
+            -webkit-mask-image: linear-gradient(to right, transparent 0, black 8px, black calc(100% - 24px), transparent 100%);
+            mask-image: linear-gradient(to right, transparent 0, black 8px, black calc(100% - 24px), transparent 100%);
+        }
+        /* Thin scrollbar for overflow panels */
+        .thin-scroll::-webkit-scrollbar { height: 4px; width: 4px; }
+        .thin-scroll::-webkit-scrollbar-track { background: transparent; }
+        .thin-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .thin-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans text-gray-800 antialiased selection:bg-brand-500 selection:text-white flex flex-col min-h-screen">
+
+    <!-- Auth Initializing Overlay -->
+    <div id="auth-loading" class="fixed inset-0 z-[200] bg-slate-900 flex flex-col items-center justify-center transition-opacity duration-500">
+        <div class="loader mb-4 border-t-brand-500 border-4 rounded-full w-8 h-8 animate-spin"></div>
+        <p class="text-slate-400 text-sm font-medium animate-pulse">Connecting to Basecamp...</p>
+    </div>
+
+    <!-- ================= LOGIN SCREEN (CHOOSE YOUR FIGHTER) ================= -->
+    <div id="login-screen" class="login-bg fixed inset-0 z-[100] flex items-center justify-center p-4 transition-opacity duration-500 hidden opacity-0">
+        <div class="max-w-3xl w-full">
+            <div class="text-center mb-8">
+                <span class="inline-block py-1 px-3 rounded-full bg-brand-500/20 text-brand-400 border border-brand-500/30 text-xs font-semibold tracking-widest mb-4 uppercase">
+                    Authentication
+                </span>
+                <h1 class="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white mb-2 drop-shadow-md">Choose Your Fighter</h1>
+                <p class="text-slate-400">Select your profile to enter the TMB Hub</p>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-4" id="fighter-grid">
+                <!-- Fighters generated by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= MAIN APP (HIDDEN BY DEFAULT) ================= -->
+    <div id="main-app" class="hidden flex-1 flex flex-col opacity-0 transition-opacity duration-500">
+        <!-- Navigation -->
+        <nav class="fixed w-full z-50 bg-white/90 backdrop-blur-md shadow-sm">
+            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16 items-center">
+                    <div class="flex-shrink-0 flex items-center gap-2 text-brand-700 font-bold text-xl">
+                        <i class="fa-solid fa-mountain"></i> TMB '26
+                    </div>
+                    <div class="hidden md:flex space-x-8 items-center">
+                        <a href="#overview" class="text-gray-600 hover:text-brand-700 font-medium transition-colors">Overview</a>
+                        <a href="#route" class="text-gray-600 hover:text-brand-700 font-medium transition-colors">Route</a>
+                        <a href="#logistics" class="text-gray-600 hover:text-brand-700 font-medium transition-colors">Flights & Bags</a>
+                        <a href="#finance" class="text-gray-600 hover:text-brand-700 font-medium transition-colors">Finance</a>
+                        <a href="#training" class="text-gray-600 hover:text-brand-700 font-medium transition-colors">Training</a>
+                        <a href="#gear" class="text-gray-600 hover:text-brand-700 font-medium transition-colors">Gear</a>
+                        <a href="#admin" class="text-gray-600 hover:text-brand-700 font-medium transition-colors">Admin</a>
+                        <div class="h-6 w-px bg-gray-300 mx-2"></div>
+                        <div class="flex items-center gap-3">
+                            <!-- Live Sync Indicator -->
+                            <div class="flex items-center gap-1.5 bg-green-50 text-green-600 px-2 py-1 rounded border border-green-100 text-xs font-semibold" title="Live connected to Firebase">
+                                <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                                Live Sync
+                            </div>
+                            <span id="nav-username" class="font-bold text-gray-900 bg-gray-100 py-1 px-3 rounded-full text-sm"></span>
+                            <button onclick="window.logout()" class="text-sm text-red-500 hover:text-red-700 font-medium"><i class="fa-solid fa-right-from-bracket"></i> Switch User</button>
+                        </div>
+                    </div>
+                    <!-- Mobile menu button -->
+                    <div class="md:hidden flex items-center gap-4">
+                        <div class="flex items-center gap-1.5 bg-green-50 text-green-600 px-2 py-1 rounded border border-green-100 text-xs font-semibold">
+                            <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                        </div>
+                        <button onclick="window.logout()" class="text-sm text-red-500 font-medium"><i class="fa-solid fa-right-from-bracket"></i></button>
+                        <button id="mobile-menu-btn" class="text-gray-600 hover:text-brand-700 focus:outline-none">
+                            <i class="fa-solid fa-bars text-2xl"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <!-- Mobile Menu -->
+            <div id="mobile-menu" class="hidden md:hidden bg-white border-t top-16 fixed w-full z-40 shadow-lg">
+                <div class="px-4 py-3 bg-gray-50 border-b flex items-center gap-2">
+                    <span class="text-sm text-gray-500">Logged in as:</span>
+                    <span id="mobile-nav-username" class="font-bold text-gray-900 text-sm"></span>
+                </div>
+                <a href="#overview" class="block px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-brand-700 border-b">Overview</a>
+                <a href="#route" class="block px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-brand-700 border-b">Route</a>
+                <a href="#logistics" class="block px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-brand-700 border-b">Flights & Bags</a>
+                <a href="#finance" class="block px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-brand-700 border-b">Finance</a>
+                <a href="#training" class="block px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-brand-700 border-b">Training</a>
+                <a href="#gear" class="block px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-brand-700 border-b">Gear</a>
+                <a href="#admin" class="block px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-brand-700">Admin</a>
+            </div>
+        </nav>
+
+        <!-- Hero Section -->
+        <section class="hero-bg min-h-[55vh] sm:min-h-[65vh] md:min-h-[70vh] flex items-center justify-center pt-16 relative">
+            <div class="text-center px-4 max-w-4xl mx-auto z-10 mt-6 sm:mt-10">
+                <span id="hero-greeting" class="inline-block py-1 px-3 rounded-full bg-brand-500/20 text-brand-100 border border-brand-500/30 text-sm font-semibold tracking-wider mb-4 uppercase">
+                    Welcome back, Fighter
+                </span>
+                <h1 class="text-4xl sm:text-5xl md:text-7xl font-extrabold text-white mb-4 sm:mb-6 drop-shadow-lg">
+                    Tour Du Mont Blanc
+                </h1>
+                <p class="text-base sm:text-xl md:text-2xl text-gray-200 mb-6 sm:mb-10 font-light drop-shadow-md">
+                    Aug 29 - Sep 1, 2026 &bull; Chamonix to Courmayeur
+                </p>
+                
+                <!-- Countdown Timer -->
+                <div class="flex justify-center gap-3 sm:gap-4 md:gap-8 text-white">
+                    <div class="flex flex-col items-center">
+                        <div id="days" class="text-3xl sm:text-4xl md:text-6xl font-bold bg-white/10 backdrop-blur-sm rounded-xl p-3 sm:p-4 md:p-6 shadow-xl border border-white/20 w-16 sm:w-20 md:w-32">00</div>
+                        <span class="text-[10px] sm:text-xs md:text-sm mt-1.5 sm:mt-2 uppercase tracking-widest font-semibold text-gray-300">Days</span>
+                    </div>
+                    <div class="flex flex-col items-center">
+                        <div id="hours" class="text-3xl sm:text-4xl md:text-6xl font-bold bg-white/10 backdrop-blur-sm rounded-xl p-3 sm:p-4 md:p-6 shadow-xl border border-white/20 w-16 sm:w-20 md:w-32">00</div>
+                        <span class="text-[10px] sm:text-xs md:text-sm mt-1.5 sm:mt-2 uppercase tracking-widest font-semibold text-gray-300">Hours</span>
+                    </div>
+                    <div class="flex flex-col items-center">
+                        <div id="minutes" class="text-3xl sm:text-4xl md:text-6xl font-bold bg-white/10 backdrop-blur-sm rounded-xl p-3 sm:p-4 md:p-6 shadow-xl border border-white/20 w-16 sm:w-20 md:w-32">00</div>
+                        <span class="text-[10px] sm:text-xs md:text-sm mt-1.5 sm:mt-2 uppercase tracking-widest font-semibold text-gray-300">Mins</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Bottom Wave Decor -->
+            <div class="absolute bottom-0 w-full overflow-hidden leading-none transform translate-y-1">
+                <svg class="relative block w-full h-12 md:h-24" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
+                    <path d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V120H0V95.8C59.71,118,130.9,122.9,195.2,111.43,238.48,103.73,281.34,80.1,321.39,56.44Z" fill="#f3f4f6"></path>
+                </svg>
+            </div>
+        </section>
+
+        <main class="max-w-6xl mx-auto px-3 sm:px-6 lg:px-8 py-8 sm:py-12 -mt-16 z-20 relative flex-1 w-full space-y-8 sm:space-y-12">
+            
+            <!-- Action Dashboard -->
+            <div class="grid sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
+                <!-- The Crew -->
+                <div class="glass-card rounded-2xl p-4 sm:p-6 shadow-lg border border-gray-100 flex flex-col justify-between">
+                    <div class="flex items-start gap-4 mb-4">
+                        <div class="bg-blue-100 text-blue-600 p-3 rounded-lg"><i class="fa-solid fa-users text-xl"></i></div>
+                        <div>
+                            <h3 class="font-bold text-gray-900">The Crew (6)</h3>
+                            <p class="text-sm text-gray-600 mt-1">Matt B, Dan B, Dan M, Jamie P, Matt Birkin, Mike S.</p>
+                        </div>
+                    </div>
+                    <div class="text-xs bg-gray-50 p-2 rounded text-gray-500 border border-gray-100">
+                        <i class="fa-solid fa-circle-check text-green-500 mr-1"></i> Final group confirmed.
+                    </div>
+                </div>
+
+                <!-- Payment Status -->
+                <div class="glass-card rounded-2xl p-4 sm:p-6 shadow-lg border border-gray-100 flex flex-col justify-between">
+                    <div class="flex items-start gap-4 mb-4">
+                        <div class="bg-green-100 text-green-600 p-3 rounded-lg"><i class="fa-solid fa-money-bill-wave text-xl"></i></div>
+                        <div>
+                            <h3 class="font-bold text-gray-900">Payment Status</h3>
+                            <p class="text-sm text-gray-600 mt-1">Initial £90 deposit paid by all.</p>
+                        </div>
+                    </div>
+                    <div class="text-xs bg-red-50 p-2 rounded text-red-700 border border-red-100 font-semibold flex items-center justify-between">
+                        <span><i class="fa-regular fa-calendar-xmark mr-1"></i> Balance Due:</span>
+                        <span>June 2026</span>
+                    </div>
+                </div>
+
+                <!-- Personal Kit List Status -->
+                <div class="glass-card rounded-2xl p-4 sm:p-6 shadow-lg border border-gray-100 bg-gradient-to-br from-white to-brand-50 flex flex-col justify-between relative overflow-hidden">
+                    <div class="absolute -right-4 -top-4 text-brand-100 text-7xl opacity-50 pointer-events-none">
+                        <i class="fa-solid fa-clipboard-list"></i>
+                    </div>
+                    <div class="flex items-start gap-4 mb-4 relative z-10">
+                        <div class="bg-brand-100 text-brand-600 p-3 rounded-lg"><i class="fa-solid fa-suitcase text-xl"></i></div>
+                        <div>
+                            <h3 class="font-bold text-gray-900" id="dashboard-kit-title">Your Kit List</h3>
+                            <p class="text-sm text-gray-600 mt-1"><span id="kit-progress">0</span>/18 items packed.</p>
+                        </div>
+                    </div>
+                    <a href="#gear" class="text-sm bg-brand-600 hover:bg-brand-700 text-white text-center py-2 px-3 rounded-md transition-colors relative z-10 font-medium shadow-sm">Update My Kit</a>
+                </div>
+            </div>
+
+            <!-- Section: Overview & UTMB -->
+            <section id="overview" class="bg-white rounded-2xl sm:rounded-3xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="grid md:grid-cols-2">
+                    <div class="p-5 sm:p-8 md:p-12 flex flex-col justify-center">
+                        <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">The Itinerary</h2>
+                        <p class="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6 leading-relaxed">
+                            A guided long-weekend hike with <strong>Much Better Adventures</strong>.
+                            We'll be trekking roughly 15-20km each day over 3 days, staying in mountain huts.
+                        </p>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
+                            <div class="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                                <span class="block text-xs text-gray-500 uppercase font-bold mb-1"><i class="fa-solid fa-shoe-prints mr-1"></i> Pace & Terrain</span>
+                                <span class="text-sm font-medium text-gray-800">Demanding terrain, steady pace. Good fitness required.</span>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                                <span class="block text-xs text-gray-500 uppercase font-bold mb-1"><i class="fa-solid fa-arrow-trend-up mr-1"></i> Day 1 Preview</span>
+                                <span class="text-sm font-medium text-gray-800">3-4hrs • 7km<br>590m up • 150m down</span>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-lg">
+                            <h4 class="font-bold text-amber-800 flex items-center gap-2">
+                                <i class="fa-solid fa-triangle-exclamation"></i> The UTMB Factor
+                            </h4>
+                            <p class="text-sm text-amber-900 mt-1">
+                                Our trip lands on the same weekend as the 100-mile Ultra Trail du Mont Blanc (~50k visitors). 
+                                <strong>Good news:</strong> We are hiking anti-clockwise to avoid crowds, so the trail itself will remain tranquil.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="bg-gray-200 min-h-[200px] sm:min-h-[300px]" style="background-image: url('https://images.unsplash.com/photo-1531366936336-62fc674babf6?q=80&w=2070&auto=format&fit=crop'); background-size: cover; background-position: center;">
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section: Route Breakdown -->
+            <section id="route" class="space-y-6">
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 border-b pb-2"><i class="fa-solid fa-route text-brand-500 mr-2"></i> The Route</h2>
+
+                <!-- Route Banner Photo -->
+                <div class="rounded-2xl overflow-hidden h-40 sm:h-56 md:h-64 relative">
+                    <div class="absolute inset-0" style="background-image: url('https://images.unsplash.com/photo-1600417145424-85b4254fe4b1?q=80&w=2070&auto=format&fit=crop'); background-size: cover; background-position: center;"></div>
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+                    <div class="absolute bottom-4 left-4 sm:bottom-6 sm:left-6 text-white">
+                        <p class="font-extrabold text-lg sm:text-2xl drop-shadow-lg">Courmayeur to Chamonix</p>
+                        <p class="text-xs sm:text-sm text-white/80 drop-shadow-md">4 days across Italy, Switzerland & France</p>
+                    </div>
+                </div>
+
+                <!-- Weather Widget -->
+                <div class="bg-gradient-to-r from-sky-50 to-blue-50 rounded-2xl p-4 sm:p-5 border border-blue-100">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="font-bold text-base text-gray-800"><i class="fa-solid fa-cloud-sun text-blue-400 mr-1.5"></i> Chamonix Weather</h3>
+                        <span class="text-xs text-blue-400 italic">Open-Meteo</span>
+                    </div>
+                    <div id="weather-forecast" class="flex gap-3 overflow-x-auto pb-2 scroll-fade thin-scroll">
+                        <p class="text-sm text-blue-400 animate-pulse">Loading forecast...</p>
+                    </div>
+                </div>
+
+                <!-- Stats banner -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div class="bg-white rounded-xl p-4 border border-gray-200 text-center"><span class="block text-2xl font-extrabold text-gray-900">4</span><span class="text-xs text-gray-500 uppercase font-bold">Days Hiking</span></div>
+                    <div class="bg-white rounded-xl p-4 border border-gray-200 text-center"><span class="block text-2xl font-extrabold text-gray-900">~55km</span><span class="text-xs text-gray-500 uppercase font-bold">Total Distance</span></div>
+                    <div class="bg-white rounded-xl p-4 border border-gray-200 text-center"><span class="block text-2xl font-extrabold text-gray-900">2,536m</span><span class="text-xs text-gray-500 uppercase font-bold">Max Elevation</span></div>
+                    <div class="bg-white rounded-xl p-4 border border-gray-200 text-center"><span class="block text-2xl font-extrabold text-gray-900">3</span><span class="text-xs text-gray-500 uppercase font-bold">Mountain Huts</span></div>
+                </div>
+
+                <!-- Day Cards (collapsible) -->
+                <div class="space-y-3">
+                    <!-- Day 1 (open by default) -->
+                    <div class="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-200">
+                        <button onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.chevron-icon').classList.toggle('rotate-180')" class="w-full p-3.5 sm:p-5 text-left flex items-center justify-between hover:bg-gray-50 transition-colors gap-2 sm:gap-4">
+                            <div class="flex items-center gap-4 min-w-0">
+                                <div class="bg-brand-100 text-brand-700 font-extrabold text-sm w-11 h-11 rounded-xl flex items-center justify-center shrink-0">D1</div>
+                                <div class="min-w-0">
+                                    <h4 class="font-bold text-gray-900 text-sm truncate">Italy — Hike into Val Ferret</h4>
+                                    <p class="text-xs text-gray-400 truncate">Aug 29 · Geneva → Plampincieux → Val Ferret</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3 text-xs text-gray-500 shrink-0">
+                                <span class="hidden sm:inline">3-4hrs</span><span class="font-semibold">7km</span><span class="text-green-600 font-semibold">↑590m</span><span class="text-red-400">↓150m</span>
+                                <i class="fa-solid fa-chevron-down chevron-icon text-gray-300 transition-transform duration-200 ml-1 rotate-180"></i>
+                            </div>
+                        </button>
+                        <div class="border-t border-gray-100 px-3.5 sm:px-5 pb-4 sm:pb-5 pt-3 sm:pt-4">
+                            <div class="day-photo" style="background-image: url('https://images.unsplash.com/photo-1737713504259-bf280e835bcb?q=80&w=2070&auto=format&fit=crop')"></div>
+                            <p class="text-sm text-gray-600 leading-relaxed">After meeting your hosts at Geneva Airport, you'll be driven through the Mont Blanc tunnel to Plampincieux, just outside Courmayeur on the Italian side. From there you'll ascend into the Val Ferret heading towards the Italian-Swiss border, with inspiring views of <strong>Mont Blanc</strong>, <strong>Dent du Geants</strong>, and the <strong>Grandes Jorasses</strong> massif. You'll reach your mountain refuge high up in the valley in time for a hearty dinner.</p>
+                            <div class="mt-3 flex flex-wrap gap-2 text-xs"><span class="bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full">Mountain Hut · Mixed Dorm</span><span class="bg-green-50 text-green-700 px-2.5 py-1 rounded-full">Lunch + Dinner</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Day 2 -->
+                    <div class="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-200">
+                        <button onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.chevron-icon').classList.toggle('rotate-180')" class="w-full p-3.5 sm:p-5 text-left flex items-center justify-between hover:bg-gray-50 transition-colors gap-2 sm:gap-4">
+                            <div class="flex items-center gap-4 min-w-0">
+                                <div class="bg-amber-100 text-amber-700 font-extrabold text-sm w-11 h-11 rounded-xl flex items-center justify-center shrink-0">D2</div>
+                                <div class="min-w-0">
+                                    <h4 class="font-bold text-gray-900 text-sm truncate">Grand Col Ferret — Into Switzerland</h4>
+                                    <p class="text-xs text-gray-400 truncate">Aug 30 · Val Ferret → Col Ferret → La Fouly → Champex</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3 text-xs text-gray-500 shrink-0">
+                                <span class="hidden sm:inline">7-8hrs</span><span class="font-semibold">20km</span><span class="text-green-600 font-semibold">↑950m</span><span class="text-red-400">↓1,250m</span>
+                                <i class="fa-solid fa-chevron-down chevron-icon text-gray-300 transition-transform duration-200 ml-1"></i>
+                            </div>
+                        </button>
+                        <div class="hidden border-t border-gray-100 px-3.5 sm:px-5 pb-4 sm:pb-5 pt-3 sm:pt-4">
+                            <div class="day-photo" style="background-image: url('https://images.unsplash.com/photo-1658309266985-65b6ffd3edcf?q=80&w=2070&auto=format&fit=crop')"></div>
+                            <p class="text-sm text-gray-600 leading-relaxed">Start the morning with an invigorating ascent up to <strong>Grand Col Ferret (2,536m)</strong>, crossing from Italy into Switzerland. This is one of the most challenging passes on the TMB route — a long steady climb with incredible views of Val Ferret, Mont Dolent and the Swiss side of the valley. From the top you'll take the more gradual, long descent down to La Fouly village, stopping at a traditional dairy farm with a chance to sample local produce. From La Fouly you'll be driven to Champex for the night.</p>
+                            <div class="mt-3 flex flex-wrap gap-2 text-xs"><span class="bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full">Mountain Hut · Mixed Dorm</span><span class="bg-green-50 text-green-700 px-2.5 py-1 rounded-full">All Meals</span><span class="bg-red-50 text-red-600 px-2.5 py-1 rounded-full font-semibold">Hardest Day</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Day 3 -->
+                    <div class="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-200">
+                        <button onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.chevron-icon').classList.toggle('rotate-180')" class="w-full p-3.5 sm:p-5 text-left flex items-center justify-between hover:bg-gray-50 transition-colors gap-2 sm:gap-4">
+                            <div class="flex items-center gap-4 min-w-0">
+                                <div class="bg-purple-100 text-purple-700 font-extrabold text-sm w-11 h-11 rounded-xl flex items-center justify-center shrink-0">D3</div>
+                                <div class="min-w-0">
+                                    <h4 class="font-bold text-gray-900 text-sm truncate">Bovine Route — Champex to Trient</h4>
+                                    <p class="text-xs text-gray-400 truncate">Aug 31 · Champex → Bovine Refuge → Col de la Forclaz → Trient</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3 text-xs text-gray-500 shrink-0">
+                                <span class="hidden sm:inline">6-7hrs</span><span class="font-semibold">16km</span><span class="text-green-600 font-semibold">↑780m</span><span class="text-red-400">↓890m</span>
+                                <i class="fa-solid fa-chevron-down chevron-icon text-gray-300 transition-transform duration-200 ml-1"></i>
+                            </div>
+                        </button>
+                        <div class="hidden border-t border-gray-100 px-3.5 sm:px-5 pb-4 sm:pb-5 pt-3 sm:pt-4">
+                            <div class="day-photo" style="background-image: url('https://images.unsplash.com/photo-1600417145424-85b4254fe4b1?q=80&w=2070&auto=format&fit=crop')"></div>
+                            <p class="text-sm text-gray-600 leading-relaxed">Hike up and over the mountains via the classic <strong>Bovine route</strong> to Trient. This winding forest trail leads past mountain streams to the Bovine Refuge and the high alpages, with spectacular views of the Rhone Valley. Make sure to stop for a slice of the best cake the region has to offer! From the top you'll descend through forest to the <strong>Col de la Forclaz</strong>, enjoy deep valley views from a boardwalk looking down on Trient and its famous pink church, then a short section down to the village for the night.</p>
+                            <div class="mt-3 flex flex-wrap gap-2 text-xs"><span class="bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full">Mountain Hut · Mixed Dorm</span><span class="bg-green-50 text-green-700 px-2.5 py-1 rounded-full">All Meals</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Day 4 -->
+                    <div class="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-200">
+                        <button onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.chevron-icon').classList.toggle('rotate-180')" class="w-full p-3.5 sm:p-5 text-left flex items-center justify-between hover:bg-gray-50 transition-colors gap-2 sm:gap-4">
+                            <div class="flex items-center gap-4 min-w-0">
+                                <div class="bg-red-100 text-red-700 font-extrabold text-sm w-11 h-11 rounded-xl flex items-center justify-center shrink-0">D4</div>
+                                <div class="min-w-0">
+                                    <h4 class="font-bold text-gray-900 text-sm truncate">Col de Balme — Descent to Chamonix</h4>
+                                    <p class="text-xs text-gray-400 truncate">Sep 1 · Trient → Col de Balme → Tre-le-Champ → Chamonix</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3 text-xs text-gray-500 shrink-0">
+                                <span class="hidden sm:inline">5-6hrs</span><span class="font-semibold">12km</span><span class="text-green-600 font-semibold">↑950m</span><span class="text-red-400">↓800m</span>
+                                <i class="fa-solid fa-chevron-down chevron-icon text-gray-300 transition-transform duration-200 ml-1"></i>
+                            </div>
+                        </button>
+                        <div class="hidden border-t border-gray-100 px-3.5 sm:px-5 pb-4 sm:pb-5 pt-3 sm:pt-4">
+                            <div class="day-photo" style="background-image: url('https://images.unsplash.com/photo-1590319441479-b2fa34ac0cb1?q=80&w=2070&auto=format&fit=crop')"></div>
+                            <p class="text-sm text-gray-600 leading-relaxed">Your last long ascent: <strong>Col de Balme (2,190m)</strong>, rewarded with an expansive vista down the Chamonix Valley towards Mont Blanc and the Aiguille du Midi. Then traverse to <strong>L'Aiguillettes des Posettes</strong> for another jaw-dropping viewpoint, and descend through glades and forest to Tre-le-Champ. Hike usually finishes around 15:30 — local bus back to central Chamonix for a quick celebration drink. Shared bus to Geneva Airport departs ~17:00.</p>
+                            <div class="mt-3 flex flex-wrap gap-2 text-xs"><span class="bg-green-50 text-green-700 px-2.5 py-1 rounded-full">Breakfast + Lunch</span><span class="bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full">Geneva Transfer 17:00</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Food & Accommodation -->
+                <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-200">
+                    <h3 class="font-bold text-base sm:text-lg text-gray-800 mb-3 sm:mb-4"><i class="fa-solid fa-utensils text-brand-500 mr-1.5"></i> Food & Accommodation</h3>
+                    <div class="overflow-x-auto thin-scroll">
+                        <table class="w-full text-xs sm:text-sm min-w-[400px]">
+                            <thead>
+                                <tr class="text-[10px] sm:text-xs text-gray-400 uppercase font-bold border-b"><th class="text-left pb-2 sm:pb-3 pr-2 sm:pr-4">Day</th><th class="text-left pb-2 sm:pb-3 pr-2 sm:pr-4">Accommodation</th><th class="text-center pb-2 sm:pb-3 w-14 sm:w-20">Bkfst</th><th class="text-center pb-2 sm:pb-3 w-14 sm:w-20">Lunch</th><th class="text-center pb-2 sm:pb-3 w-14 sm:w-20">Dinner</th></tr>
+                            </thead>
+                            <tbody class="text-gray-700">
+                                <tr class="border-b border-gray-50"><td class="py-3 pr-4 font-semibold">Day 1</td><td class="py-3 pr-4 text-gray-500">Mountain hut · Mixed dorm</td><td class="py-3 text-center text-gray-300"><i class="fa-solid fa-xmark"></i></td><td class="py-3 text-center text-green-500"><i class="fa-solid fa-check"></i></td><td class="py-3 text-center text-green-500"><i class="fa-solid fa-check"></i></td></tr>
+                                <tr class="border-b border-gray-50"><td class="py-3 pr-4 font-semibold">Day 2–3</td><td class="py-3 pr-4 text-gray-500">Mountain hut · Mixed dorm</td><td class="py-3 text-center text-green-500"><i class="fa-solid fa-check"></i></td><td class="py-3 text-center text-green-500"><i class="fa-solid fa-check"></i></td><td class="py-3 text-center text-green-500"><i class="fa-solid fa-check"></i></td></tr>
+                                <tr><td class="py-3 pr-4 font-semibold">Day 4</td><td class="py-3 pr-4 text-gray-500">Departure day</td><td class="py-3 text-center text-green-500"><i class="fa-solid fa-check"></i></td><td class="py-3 text-center text-green-500"><i class="fa-solid fa-check"></i></td><td class="py-3 text-center text-gray-300"><i class="fa-solid fa-xmark"></i></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-3">Breakfasts include coffee, bread, jam, butter + extras. Dinners are hearty 3-course meals. Picnic lunches provided for the trail. Vegetarian/vegan/gluten-free catered with notice.</p>
+                </div>
+
+                <!-- Key Trip Info -->
+                <div class="grid sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
+                    <div class="bg-white rounded-xl p-3.5 sm:p-4 border border-gray-200">
+                        <div class="flex items-center gap-3 mb-2"><div class="bg-blue-50 text-blue-500 p-2 rounded-lg"><i class="fa-solid fa-user-shield"></i></div><span class="font-bold text-sm text-gray-800">Guides</span></div>
+                        <p class="text-xs text-gray-500">IML certified, First Aid trained. 1 guide per 15 hikers. English speaking.</p>
+                    </div>
+                    <div class="bg-white rounded-xl p-4 border border-gray-200">
+                        <div class="flex items-center gap-3 mb-2"><div class="bg-green-50 text-green-500 p-2 rounded-lg"><i class="fa-solid fa-bus"></i></div><span class="font-bold text-sm text-gray-800">Transfers</span></div>
+                        <p class="text-xs text-gray-500">Included to/from Geneva Airport. Return bus departs Chamonix ~17:00 on Day 4.</p>
+                    </div>
+                    <div class="bg-white rounded-xl p-4 border border-gray-200">
+                        <div class="flex items-center gap-3 mb-2"><div class="bg-amber-50 text-amber-500 p-2 rounded-lg"><i class="fa-solid fa-shield-halved"></i></div><span class="font-bold text-sm text-gray-800">Insurance</span></div>
+                        <p class="text-xs text-gray-500">Compulsory. Must cover hiking up to 2,500m minimum. <strong>True Traveller</strong> or <strong>Rise + Shield</strong> recommended.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section: Flights & Baggage Dilemma -->
+            <section id="logistics" class="space-y-6">
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 border-b pb-2"><i class="fa-solid fa-plane-departure text-brand-500 mr-2"></i> Logistics: Flights & Bags</h2>
+                
+                <div class="grid md:grid-cols-2 gap-4 sm:gap-6">
+                    <!-- Flight Info -->
+                    <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-200">
+                        <h3 class="font-bold text-lg sm:text-xl mb-3 sm:mb-4 text-gray-800">Flight Strategy</h3>
+                        <ul class="space-y-4">
+                            <li class="flex items-start gap-3">
+                                <div class="bg-blue-50 text-blue-500 p-2 rounded-lg mt-1"><i class="fa-solid fa-location-dot"></i></div>
+                                <div>
+                                    <span class="font-semibold text-gray-900 block">Route</span>
+                                    <span class="text-gray-600 text-sm">Manchester (MAN) to Geneva (GVA)</span>
+                                </div>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <div class="bg-purple-50 text-purple-500 p-2 rounded-lg mt-1"><i class="fa-solid fa-clock"></i></div>
+                                <div>
+                                    <span class="font-semibold text-gray-900 block">Return Flight Rules</span>
+                                    <span class="text-gray-600 text-sm">Must depart Geneva <strong>after 20:30</strong> (Target: 21:15). We hike on the final morning!</span>
+                                </div>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <div class="bg-green-50 text-green-500 p-2 rounded-lg mt-1"><i class="fa-solid fa-shield-halved"></i></div>
+                                <div>
+                                    <span class="font-semibold text-gray-900 block">Insurance</span>
+                                    <span class="text-gray-600 text-sm">Check policies. Must cover hiking up to 2,500m minimum (4,500m recommended).</span>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Bag Sizes -->
+                    <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-200">
+                        <h3 class="font-bold text-lg sm:text-xl mb-3 sm:mb-4 text-gray-800">The EasyJet Dilemma</h3>
+                        <p class="text-sm text-gray-600 mb-4">Target pack size: 30L-50L. Can we squeeze it under the seat?</p>
+                        
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                <div>
+                                    <span class="font-bold text-gray-800 block">Under Seat (Included)</span>
+                                    <span class="text-xs text-gray-500">Max 45 x 36 x 20 cm (~32L)</span>
+                                </div>
+                                <span class="bg-green-100 text-green-700 text-xs font-bold px-2 py-1 rounded">£0</span>
+                            </div>
+                            <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                <div>
+                                    <span class="font-bold text-gray-800 block">Large Cabin Bag</span>
+                                    <span class="text-xs text-gray-500">Max 56 x 45 x 25 cm (~63L)</span>
+                                </div>
+                                <span class="bg-red-100 text-red-700 text-xs font-bold px-2 py-1 rounded">~£32.74</span>
+                            </div>
+                            <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                <div>
+                                    <span class="font-bold text-gray-800 block">Hold Bag (15kg - 26kg)</span>
+                                    <span class="text-xs text-gray-500">Required for hiking poles</span>
+                                </div>
+                                <span class="bg-red-100 text-red-700 text-xs font-bold px-2 py-1 rounded">£32 - £47</span>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4 text-sm bg-blue-50 border border-blue-100 text-blue-800 p-3 rounded-lg">
+                            <strong>Proposal:</strong> Everyone take 50L bags partially filled to fit under seat. Share one "Team Hold Bag" for poles & extras.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Team Hold Bag Claimer -->
+                <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-200">
+                    <div class="flex items-start justify-between mb-4 gap-3">
+                        <div class="min-w-0">
+                            <h3 class="font-bold text-lg sm:text-xl text-gray-800">Team Hold Bag Claimer</h3>
+                            <p class="text-sm text-gray-500 mt-0.5">Matt B's 26kg hold bag · £46.99 split proportionally</p>
+                        </div>
+                        <div class="text-right flex-shrink-0 ml-4">
+                            <span class="text-2xl sm:text-3xl font-extrabold text-gray-900" id="bag-remaining">26.0</span>
+                            <span class="text-xs text-gray-500 block">kg remaining</span>
+                        </div>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-3 mb-4 overflow-hidden">
+                        <div id="bag-capacity-bar" class="bg-brand-500 h-3 rounded-full transition-all duration-500" style="width:0%"></div>
+                    </div>
+                    <div id="bag-claims-list" class="space-y-2 mb-3 min-h-[40px]">
+                        <p class="text-sm text-gray-400 text-center py-2">No items claimed yet.</p>
+                    </div>
+                    <div id="bag-claim-form" class="bg-gray-50 rounded-xl p-4 border border-gray-200 hidden mb-3">
+                        <p class="text-xs font-bold text-gray-600 uppercase mb-2">Claim Your Space</p>
+                        <div class="flex gap-2 mb-2">
+                            <input id="bag-item-name" type="text" placeholder="Item (e.g. Hiking Poles)" class="flex-1 text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-brand-400 focus:outline-none">
+                            <input id="bag-item-weight" type="number" step="0.1" min="0.1" max="26" placeholder="kg" class="w-20 text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-brand-400 focus:outline-none">
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="window.addBagClaim()" class="flex-1 bg-brand-600 hover:bg-brand-700 text-white text-sm py-2 px-3 rounded-lg font-medium transition-colors">Claim It</button>
+                            <button onclick="document.getElementById('bag-claim-form').classList.add('hidden')" class="text-sm text-gray-500 hover:text-gray-700 py-2 px-3 rounded-lg border">Cancel</button>
+                        </div>
+                    </div>
+                    <button onclick="document.getElementById('bag-claim-form').classList.toggle('hidden')" class="w-full text-sm text-brand-700 hover:text-brand-800 font-medium py-2 border border-dashed border-brand-300 rounded-lg hover:bg-brand-50 transition-colors">
+                        + Claim Space in Bag
+                    </button>
+                    <div id="bag-cost-split" class="mt-4 bg-green-50 rounded-lg p-3 border border-green-100 hidden">
+                        <p class="text-xs text-green-700 font-bold uppercase mb-2">Cost Split (£46.99 total)</p>
+                        <div id="bag-cost-list" class="space-y-1"></div>
+                    </div>
+                </div>
+
+                <!-- Bag Roster -->
+                <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-200">
+                    <h3 class="font-bold text-lg sm:text-xl mb-1 text-gray-800">Bag Roster</h3>
+                    <p class="text-sm text-gray-500 mb-4">Set your bag commitment. No surprises at the airport.</p>
+                    <div class="mb-4 bg-brand-50 rounded-xl p-4 border border-brand-100">
+                        <p class="text-xs font-bold text-brand-700 uppercase mb-2">Your Bag Type</p>
+                        <div class="flex gap-2 flex-wrap">
+                            <button onclick="window.setBagChoice('under_seat')" class="bag-choice-btn text-xs px-3 py-2 rounded-full border bg-white text-gray-600 border-gray-300 hover:border-brand-400 transition-colors" data-choice="under_seat">Under-Seat (Free)</button>
+                            <button onclick="window.setBagChoice('large_cabin')" class="bag-choice-btn text-xs px-3 py-2 rounded-full border bg-white text-gray-600 border-gray-300 hover:border-brand-400 transition-colors" data-choice="large_cabin">Large Cabin (~£33)</button>
+                            <button onclick="window.setBagChoice('hold')" class="bag-choice-btn text-xs px-3 py-2 rounded-full border bg-white text-gray-600 border-gray-300 hover:border-brand-400 transition-colors" data-choice="hold">Hold Bag (~£47)</button>
+                            <button onclick="window.clearBagChoice()" class="text-xs px-3 py-2 rounded-full border border-red-200 text-red-400 hover:bg-red-50 hover:border-red-300 transition-colors" title="Clear your selection">✕ Clear</button>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead><tr class="text-xs text-gray-500 border-b"><th class="text-left pb-2 font-semibold">Person</th><th class="text-left pb-2 font-semibold">Bag Type</th></tr></thead>
+                            <tbody id="bag-roster-table"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section: Finance Dashboard -->
+            <section id="finance" class="space-y-6">
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 border-b pb-2"><i class="fa-solid fa-sack-dollar text-brand-500 mr-2"></i> Finance HQ</h2>
+                <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-200">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-5">
+                        <div>
+                            <h3 class="font-bold text-lg sm:text-xl text-gray-800">Payment Status</h3>
+                            <p class="text-sm text-gray-500 mt-0.5">Balances and deposit tracking for the trip.</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span id="admin-badge" class="hidden text-xs bg-amber-100 text-amber-700 border border-amber-200 px-2.5 py-1.5 rounded-full font-bold whitespace-nowrap"><i class="fa-solid fa-crown mr-1"></i> Admin — you can toggle these</span>
+                            <span id="readonly-badge" class="hidden text-xs bg-gray-100 text-gray-500 border border-gray-200 px-2.5 py-1.5 rounded-full font-semibold whitespace-nowrap"><i class="fa-solid fa-lock mr-1"></i> Read-only — Matt B updates this</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 sm:gap-3 mb-2 px-1 text-[10px] sm:text-xs text-gray-400 font-bold uppercase">
+                        <span class="flex-1">Member</span>
+                        <div class="flex gap-1.5 sm:gap-3"><span class="w-12 sm:w-16 text-center">Dep.</span><span class="w-12 sm:w-16 text-center">Bal.</span><span class="w-12 sm:w-16 text-center">Flights</span></div>
+                    </div>
+                    <div id="payment-tracker" class="space-y-1.5 overflow-x-auto thin-scroll"></div>
+                </div>
+            </section>
+
+            <!-- Section: Training -->
+            <section id="training" class="space-y-6">
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 border-b pb-2"><i class="fa-solid fa-person-hiking text-brand-500 mr-2"></i> Training</h2>
+                <div class="grid md:grid-cols-3 gap-4 sm:gap-6">
+
+                    <!-- Left col: Leaderboard + Feed + Mountain Context -->
+                    <div class="md:col-span-2 space-y-5">
+
+                        <!-- Crew Progress -->
+                        <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-200">
+                            <div class="flex items-end justify-between mb-4 sm:mb-5">
+                                <h3 class="font-bold text-lg sm:text-xl text-gray-800">Crew Progress</h3>
+                                <span class="text-xs text-gray-400 italic">Everyone's own goal</span>
+                            </div>
+                            <div id="training-leaderboard" class="space-y-5"></div>
+                        </div>
+
+                        <!-- Recent Activity Feed (everyone) -->
+                        <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-200">
+                            <h3 class="font-semibold text-sm sm:text-base text-gray-800 mb-3"><i class="fa-solid fa-list-ul text-brand-500 mr-1.5"></i> Recent Activity Feed</h3>
+                            <div id="all-activities-feed" class="space-y-0.5 max-h-56 overflow-y-auto thin-scroll"></div>
+                        </div>
+
+                        <!-- Mountain Context -->
+                        <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-200">
+                            <p class="text-[10px] sm:text-xs text-gray-500 font-bold uppercase mb-3 tracking-wider">Mountain Context — Elevation Gain</p>
+                            <div class="space-y-2.5 text-xs">
+                                <div class="flex items-center gap-2 sm:gap-3"><span class="w-20 sm:w-32 text-gray-500 shrink-0 truncate">TMB Day 1</span><div class="flex-1 bg-gray-100 rounded-full h-2 overflow-hidden"><div class="bg-brand-500 h-2 rounded-full" style="width:13%"></div></div><span class="text-gray-600 font-semibold w-12 text-right">590m</span></div>
+                                <div class="flex items-center gap-2 sm:gap-3"><span class="w-20 sm:w-32 text-gray-500 shrink-0 truncate">Snowdon</span><div class="flex-1 bg-gray-100 rounded-full h-2 overflow-hidden"><div class="bg-blue-400 h-2 rounded-full" style="width:24%"></div></div><span class="text-gray-600 font-semibold w-12 text-right">1,085m</span></div>
+                                <div class="flex items-center gap-2 sm:gap-3"><span class="w-20 sm:w-32 text-gray-500 shrink-0 truncate">Ben Nevis</span><div class="flex-1 bg-gray-100 rounded-full h-2 overflow-hidden"><div class="bg-purple-400 h-2 rounded-full" style="width:30%"></div></div><span class="text-gray-600 font-semibold w-12 text-right">1,345m</span></div>
+                                <div class="flex items-center gap-2 sm:gap-3"><span class="w-20 sm:w-32 text-gray-500 shrink-0 truncate">Y. 3 Peaks</span><div class="flex-1 bg-gray-100 rounded-full h-2 overflow-hidden"><div class="bg-amber-400 h-2 rounded-full" style="width:35%"></div></div><span class="text-gray-600 font-semibold w-12 text-right">1,585m</span></div>
+                                <div class="flex items-center gap-2 sm:gap-3"><span class="w-20 sm:w-32 text-gray-500 shrink-0 truncate">Full TMB</span><div class="flex-1 bg-gray-100 rounded-full h-2 overflow-hidden"><div class="bg-red-400 h-2 rounded-full" style="width:100%"></div></div><span class="text-gray-600 font-semibold w-12 text-right">4,500m</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right col: Log Workout + Set Goal -->
+                    <div class="bg-slate-900 text-white rounded-2xl p-4 sm:p-6 shadow-xl flex flex-col gap-4 sm:gap-5">
+
+                        <!-- Log a Workout -->
+                        <div>
+                            <h3 class="font-bold text-lg mb-3"><i class="fa-solid fa-plus text-brand-400 mr-1"></i> Log a Workout</h3>
+                            <div class="flex flex-wrap gap-1.5 mb-3">
+                                <button class="activity-type-btn text-xs px-2.5 py-1.5 rounded-lg border border-slate-600 bg-slate-800 text-slate-300 hover:border-brand-400 transition-colors" data-type="hike" onclick="window.selectActivityType('hike')"><i class="fa-solid fa-person-hiking mr-1"></i>Hike</button>
+                                <button class="activity-type-btn text-xs px-2.5 py-1.5 rounded-lg border border-slate-600 bg-slate-800 text-slate-300 hover:border-brand-400 transition-colors" data-type="run" onclick="window.selectActivityType('run')"><i class="fa-solid fa-person-running mr-1"></i>Run</button>
+                                <button class="activity-type-btn text-xs px-2.5 py-1.5 rounded-lg border border-slate-600 bg-slate-800 text-slate-300 hover:border-brand-400 transition-colors" data-type="walk" onclick="window.selectActivityType('walk')"><i class="fa-solid fa-person-walking mr-1"></i>Walk</button>
+                                <button class="activity-type-btn text-xs px-2.5 py-1.5 rounded-lg border border-slate-600 bg-slate-800 text-slate-300 hover:border-brand-400 transition-colors" data-type="treadmill" onclick="window.selectActivityType('treadmill')"><i class="fa-solid fa-arrow-right-arrow-left mr-1"></i>Treadmill</button>
+                                <button class="activity-type-btn text-xs px-2.5 py-1.5 rounded-lg border border-slate-600 bg-slate-800 text-slate-300 hover:border-brand-400 transition-colors" data-type="cycle" onclick="window.selectActivityType('cycle')"><i class="fa-solid fa-bicycle mr-1"></i>Cycle</button>
+                                <button class="activity-type-btn text-xs px-2.5 py-1.5 rounded-lg border border-slate-600 bg-slate-800 text-slate-300 hover:border-brand-400 transition-colors" data-type="gym" onclick="window.selectActivityType('gym')"><i class="fa-solid fa-dumbbell mr-1"></i>Gym</button>
+                            </div>
+                            <div class="space-y-2">
+                                <input id="workout-location" type="text" placeholder="Location / description (optional)" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:ring-2 focus:ring-brand-400 focus:outline-none">
+                                <div class="grid grid-cols-2 gap-2">
+                                    <input id="workout-km" type="number" step="0.1" min="0" placeholder="Distance (km)" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:ring-2 focus:ring-brand-400 focus:outline-none">
+                                    <input id="workout-elevation" type="number" step="1" min="0" placeholder="Elevation (m)" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:ring-2 focus:ring-brand-400 focus:outline-none">
+                                </div>
+                                <button onclick="window.logWorkout()" class="w-full bg-brand-600 hover:bg-brand-700 text-white py-2.5 rounded-xl font-bold transition-colors text-sm">Log It</button>
+                            </div>
+                        </div>
+
+                        <div class="border-t border-slate-700"></div>
+
+                        <!-- Set Your Goal -->
+                        <div>
+                            <p class="text-xs text-slate-400 uppercase font-bold tracking-wider mb-2.5">Your Goal</p>
+                            <div class="space-y-2">
+                                <input id="goal-description" type="text" placeholder='e.g. "Run 200km before August"' class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:ring-2 focus:ring-brand-400 focus:outline-none">
+                                <div class="grid grid-cols-2 gap-2">
+                                    <select id="goal-metric" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-brand-400 focus:outline-none">
+                                        <option value="km">Distance (km)</option>
+                                        <option value="elevation">Elevation (m)</option>
+                                        <option value="sessions">Sessions (#)</option>
+                                        <option value="manual">Manual number</option>
+                                    </select>
+                                    <input id="goal-target" type="number" min="1" placeholder="Target" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:ring-2 focus:ring-brand-400 focus:outline-none">
+                                </div>
+                                <div id="manual-progress-row" class="hidden">
+                                    <input id="goal-manual-progress" type="number" step="0.1" placeholder="Current progress (e.g. current weight)" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:ring-2 focus:ring-brand-400 focus:outline-none">
+                                </div>
+                                <button onclick="window.setUserGoal()" class="w-full bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-xl font-semibold transition-colors text-sm">Save Goal</button>
+                            </div>
+                        </div>
+
+                        <div class="border-t border-slate-700"></div>
+
+                        <!-- My recent activities -->
+                        <div class="flex-1">
+                            <p class="text-xs text-slate-400 uppercase font-bold tracking-wider mb-2">My Recent Activity</p>
+                            <div id="my-activities-list" class="space-y-1.5 max-h-36 overflow-y-auto thin-scroll"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section: Gear & Discounts -->
+            <section id="gear" class="bg-slate-900 rounded-2xl sm:rounded-3xl overflow-hidden shadow-xl text-white">
+                <div class="grid md:grid-cols-2">
+
+                    <!-- Firebase Cloud Kit List -->
+                    <div class="p-5 sm:p-8 md:p-12 border-b md:border-b-0 md:border-r border-slate-700 relative">
+                        <!-- Tiny loading indicator for the list -->
+                        <div id="list-loader" class="absolute top-8 right-8 hidden">
+                            <div class="border-t-brand-400 border-2 border-slate-600 rounded-full w-4 h-4 animate-spin"></div>
+                        </div>
+
+                        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-3 mb-6">
+                            <div>
+                                <h2 class="text-2xl sm:text-3xl font-bold text-white mb-1"><span id="checklist-name">Your</span> Kit List</h2>
+                                <p class="text-slate-400 text-xs sm:text-sm">Saving live to Firebase Cloud</p>
+                            </div>
+                            <a href="YOUR_GOOGLE_SHEET_LINK_HERE" target="_blank" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 py-1.5 px-3 rounded-lg transition-colors border border-slate-700 flex items-center gap-2 shadow-sm self-start sm:self-auto shrink-0">
+                                <i class="fa-solid fa-table"></i> Full Sheet
+                            </a>
+                        </div>
+
+                        <div class="space-y-3" id="interactive-checklist">
+                            <!-- Checklist items generated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Directives & Discounts -->
+                    <div class="p-5 sm:p-8 md:p-12 bg-slate-800/50 flex flex-col justify-center">
+                        <h3 class="text-xl font-bold mb-6 flex items-center gap-2"><i class="fa-solid fa-circle-exclamation text-brand-400"></i> Gear Directives</h3>
+                        <ul class="space-y-5 mb-8">
+                            <li class="flex gap-4">
+                                <div class="w-10 h-10 bg-slate-800 rounded-full flex items-center justify-center flex-shrink-0 text-brand-400"><i class="fa-solid fa-shoe-prints"></i></div>
+                                <div>
+                                    <h4 class="font-bold text-white text-sm">Boots Over Shoes</h4>
+                                    <p class="text-slate-400 text-xs mt-1">Ankle protection is key. Ensure they are fully broken in before August.</p>
+                                </div>
+                            </li>
+                            <li class="flex gap-4">
+                                <div class="w-10 h-10 bg-slate-800 rounded-full flex items-center justify-center flex-shrink-0 text-brand-400"><i class="fa-solid fa-bed"></i></div>
+                                <div>
+                                    <h4 class="font-bold text-white text-sm">Sleeping Bag Liners</h4>
+                                    <p class="text-slate-400 text-xs mt-1">Huts provide duvets. Bring a thin microfibre liner for hygiene.</p>
+                                </div>
+                            </li>
+                        </ul>
+
+                        <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 relative overflow-hidden">
+                            <div class="absolute -right-6 -top-6 text-slate-700 opacity-20 text-7xl"><i class="fa-solid fa-tag"></i></div>
+                            <h3 class="text-lg font-bold text-white mb-1 relative z-10">Discount Code</h3>
+                            <p class="text-slate-400 mb-3 text-xs relative z-10">12.5% off at Snow and Rock & Cotswold Outdoor</p>
+                            <div class="flex gap-2 mb-4 relative z-10">
+                                <a href="https://www.snowandrock.com" target="_blank" rel="noopener" class="flex-1 text-center text-xs bg-slate-900 hover:bg-slate-700 text-slate-300 py-2 px-2 rounded-lg transition-colors border border-slate-600"><i class="fa-solid fa-store mr-1"></i> Snow & Rock</a>
+                                <a href="https://www.cotswoldoutdoor.com" target="_blank" rel="noopener" class="flex-1 text-center text-xs bg-slate-900 hover:bg-slate-700 text-slate-300 py-2 px-2 rounded-lg transition-colors border border-slate-600"><i class="fa-solid fa-store mr-1"></i> Cotswold Outdoor</a>
+                            </div>
+                            
+                            <div class="bg-slate-900 rounded-lg p-3 flex items-center justify-between border border-slate-600 relative z-10">
+                                <code class="text-brand-400 font-mono text-lg tracking-wider" id="discount-code">AF-MBA-L4K</code>
+                                <button onclick="window.copyCode()" class="bg-brand-600 hover:bg-brand-500 text-white p-2 rounded transition-colors group relative" title="Copy to clipboard">
+                                    <i class="fa-regular fa-copy"></i>
+                                    <span id="copy-feedback" class="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-white text-gray-900 text-xs py-1 px-2 rounded opacity-0 transition-opacity pointer-events-none">Copied!</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section: Admin -->
+            <section id="admin" class="space-y-6">
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 border-b pb-2"><i class="fa-solid fa-clipboard-check text-brand-500 mr-2"></i> Admin</h2>
+
+                <div class="grid md:grid-cols-2 gap-4 sm:gap-6">
+
+                    <!-- Readiness Poll -->
+                    <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-200">
+                        <h3 class="font-bold text-lg sm:text-xl mb-1 text-gray-800"><i class="fa-solid fa-clipboard-question text-brand-400 mr-1.5"></i> Are You Ready?</h3>
+                        <p class="text-xs sm:text-sm text-gray-500 mb-4 sm:mb-5">The honest truth. Tap to update your status.</p>
+                        <div id="readiness-poll" class="space-y-2.5"></div>
+                    </div>
+
+                    <!-- Pre-Trip Milestones -->
+                    <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-200">
+                        <div class="flex items-center justify-between mb-1">
+                            <h3 class="font-bold text-lg sm:text-xl text-gray-800"><i class="fa-solid fa-flag-checkered text-brand-400 mr-1.5"></i> Pre-Trip Milestones</h3>
+                            <span id="milestone-progress-badge" class="text-xs bg-brand-50 text-brand-700 border border-brand-200 px-2.5 py-1 rounded-full font-bold"></span>
+                        </div>
+                        <p class="text-xs sm:text-sm text-gray-500 mb-4 sm:mb-5">Group tasks (Matt B) + your personal checklist.</p>
+                        <div id="milestones-list" class="space-y-2"></div>
+                    </div>
+                </div>
+
+                <!-- Passport Vault -->
+                <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-200">
+                    <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-4 sm:mb-5">
+                        <div>
+                            <h3 class="font-bold text-lg sm:text-xl text-gray-800">Passport Vault</h3>
+                            <p class="text-sm text-gray-500 mt-0.5">Has everyone sent their passport details to Matt B for the flights?</p>
+                        </div>
+                        <span class="text-xs bg-gray-100 text-gray-500 border border-gray-200 px-2.5 py-1.5 rounded-full font-semibold whitespace-nowrap self-start"><i class="fa-solid fa-lock mr-1"></i> You can tick your own · Matt B can tick all</span>
+                    </div>
+                    <div id="passport-checklist" class="grid sm:grid-cols-2 md:grid-cols-3 gap-3"></div>
+                    <div class="mt-5 p-3 bg-blue-50 rounded-lg border border-blue-100 text-xs text-blue-700">
+                        <i class="fa-solid fa-shield-halved mr-1"></i> <strong>Privacy note:</strong> No passport data is stored here. This is a status tracker only.
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section: Feedback Hub -->
+            <section id="feedback" class="space-y-6">
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 border-b pb-2"><i class="fa-solid fa-lightbulb text-amber-400 mr-2"></i> Feedback Hub</h2>
+                <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-200">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-5">
+                        <div>
+                            <p class="text-xs sm:text-sm text-gray-500">Got an idea for the hub? Drop a suggestion below.</p>
+                        </div>
+                        <span class="text-xs bg-blue-50 text-blue-600 border border-blue-100 px-2.5 py-1.5 rounded-full font-semibold whitespace-nowrap self-start"><i class="fa-solid fa-code mr-1"></i> Dan M reviews & builds</span>
+                    </div>
+                    <div id="feedback-list" class="space-y-3 mb-4">
+                        <p class="text-sm text-gray-400 italic text-center py-4">No suggestions yet. Be the first!</p>
+                    </div>
+                    <button onclick="window.openFeedbackModal()" class="w-full text-sm text-amber-700 hover:text-amber-800 font-medium py-2.5 border border-dashed border-amber-300 rounded-xl hover:bg-amber-50 transition-colors">
+                        <i class="fa-solid fa-plus mr-1"></i> Submit a Suggestion
+                    </button>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- Floating Feedback Button -->
+        <button onclick="window.openFeedbackModal()" class="fixed bottom-5 right-5 z-40 bg-amber-500 hover:bg-amber-600 text-white w-12 h-12 sm:w-14 sm:h-14 rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110 group" title="Send Feedback">
+            <i class="fa-solid fa-lightbulb text-lg sm:text-xl"></i>
+            <span class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse"></span>
+        </button>
+
+        <!-- Feedback Modal -->
+        <div id="feedback-modal" class="fixed inset-0 z-[150] hidden">
+            <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="window.closeFeedbackModal()"></div>
+            <div class="absolute inset-x-3 sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 top-1/2 -translate-y-1/2 sm:w-full sm:max-w-md bg-white rounded-2xl shadow-2xl p-5 sm:p-6 z-10">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-bold text-lg text-gray-800"><i class="fa-solid fa-lightbulb text-amber-400 mr-1.5"></i> Send Feedback</h3>
+                    <button onclick="window.closeFeedbackModal()" class="text-gray-400 hover:text-gray-600 transition-colors p-1"><i class="fa-solid fa-xmark text-lg"></i></button>
+                </div>
+                <p class="text-xs text-gray-500 mb-3">Suggest a feature, report a bug, or just say what you think. Dan M will see it and can mark it as done.</p>
+                <textarea id="feedback-text" rows="4" maxlength="500" placeholder="e.g. Add a packing weight calculator, or fix the layout on the finance page..." class="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:ring-2 focus:ring-amber-400 focus:border-amber-400 focus:outline-none resize-none"></textarea>
+                <div class="flex items-center justify-between mt-1 mb-3">
+                    <span id="feedback-char-count" class="text-[10px] text-gray-400">0 / 500</span>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="window.submitFeedback()" id="feedback-submit-btn" class="flex-1 bg-amber-500 hover:bg-amber-600 text-white py-2.5 rounded-xl font-bold transition-colors text-sm">Submit</button>
+                    <button onclick="window.closeFeedbackModal()" class="text-sm text-gray-500 hover:text-gray-700 py-2.5 px-4 rounded-xl border border-gray-200">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <footer class="bg-gray-50 border-t border-gray-200 mt-12 py-10 text-center text-gray-500 text-sm">
+            <p class="mb-1 italic text-gray-400 text-xs">"Lifetime of incredible memories included"</p>
+            <p class="font-medium text-gray-600"><i class="fa-solid fa-mountain text-brand-400 mr-1"></i> TMB '26 — Built for the boys</p>
+        </footer>
+    </div>
+
+    <!-- Firebase Config (loaded from external file, not committed to git) -->
+    <script src="config.js"></script>
+
+    <!-- Firebase SDK Integration via Modules -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Environment Check (to ensure it works both in your deployment and this editor preview safely)
+        const isCanvasEnv = typeof __firebase_config !== 'undefined';
+        
+        // Use external config.js for deployment, fallback to environment for Canvas preview
+        const firebaseConfig = isCanvasEnv ? JSON.parse(__firebase_config) : FIREBASE_CONFIG;
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Define Collection Path (Safe for both Canvas and Your DB)
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'tmb-hub';
+        const collectionPath = isCanvasEnv
+            ? `artifacts/${appId}/public/data/tmb_kit_lists`
+            : `tmb_kit_lists`;
+
+        const sharedBase = isCanvasEnv ? `artifacts/${appId}/public/data` : `tmb_shared`;
+        const bagDataRef    = () => doc(db, sharedBase, 'bag_data');
+        const paymentsRef   = () => doc(db, sharedBase, 'payments');
+        const trainingRef   = () => doc(db, sharedBase, 'training');
+        const passportRef   = () => doc(db, sharedBase, 'passport');
+        const readinessRef  = () => doc(db, sharedBase, 'readiness');
+        const milestonesRef = () => doc(db, sharedBase, 'milestones');
+        const feedbackRef   = () => doc(db, sharedBase, 'feedback');
+
+        // --- 1. DATA & STATE ---
+        const users = [
+            { id: 'matt_b', name: 'Matt Brown', icon: 'fa-crown', desc: 'The Organiser' },
+            { id: 'matt_birkin', name: 'Matt Birkin', icon: 'fa-van-shuttle', desc: 'Minivan Enthusiast' },
+            { id: 'dan_b', name: 'Dan Brown', icon: 'fa-table-list', desc: 'Spreadsheet King' },
+            { id: 'dan_m', name: 'Dan Millington', icon: 'fa-camera', desc: 'The Dev' },
+            { id: 'jamie_p', name: 'Jamie Poole', icon: 'fa-person-running', desc: 'Fitness Worrier' },
+            { id: 'mike_s', name: 'Mike Simms', icon: 'fa-suitcase-rolling', desc: 'Travelling Light' }
+        ];
+
+        const kitItems = [
+            { id: 'boots', label: 'Sturdy Hiking Boots (broken in!)' },
+            { id: 'bag', label: '30-50L Backpack with Rain Cover' },
+            { id: 'liner', label: 'Sleeping Bag Liner (mandatory at refuges)' },
+            { id: 'waterproof', label: 'Waterproof Jacket + Trousers' },
+            { id: 'puffy', label: 'Puffy / Down Jacket' },
+            { id: 'fleece', label: 'Fleece or Merino Pullover' },
+            { id: 'baselayers', label: 'Base Layers (synthetic / merino)' },
+            { id: 'hatgloves', label: 'Warm Hat + Gloves' },
+            { id: 'socks', label: '2+ Pairs Hiking Socks (not cotton)' },
+            { id: 'sunscreen', label: 'Sunscreen SPF 50+ & Sunglasses' },
+            { id: 'headlamp', label: 'Headlamp' },
+            { id: 'water', label: '2L Water Bottles + Hydration Tabs' },
+            { id: 'cash', label: 'Cash (EUR) for drinks & extras' },
+            { id: 'charger', label: 'Battery Pack + Plug Adaptor (Swiss type!)' },
+            { id: 'earplugs', label: 'Earplugs & Eye Mask' },
+            { id: 'poles', label: 'Hiking Poles (or rent for ~€10)' },
+            { id: 'firstaid', label: 'Toiletries, Towel & First Aid Kit' },
+            { id: 'snacks', label: 'Trail Snacks & Lucozade (the fizzy one)' },
+        ];
+
+        let currentUser = null;
+        let unsubSnapshot = null;
+        let localKitData = {};
+
+        // New feature state
+        let unsubBag = null, unsubPayments = null, unsubTraining = null, unsubPassport = null;
+        let unsubReadiness = null, unsubMilestones = null, unsubFeedback = null;
+        let bagData = {}, paymentsData = {}, trainingData = {}, passportData = {};
+        let readinessData = {}, milestonesData = {}, feedbackData = {};
+        let selectedActivityType = 'hike';
+
+        const GROUP_MILESTONES = [
+            { id: 'flights', label: 'Flights Booked', icon: 'fa-plane' },
+            { id: 'accommodation', label: 'Accommodation Confirmed', icon: 'fa-bed' },
+            { id: 'balance', label: 'Final Balance Paid (June)', icon: 'fa-sterling-sign' },
+            { id: 'transfer', label: 'Geneva Transfer Arranged', icon: 'fa-bus' },
+        ];
+        const PERSONAL_MILESTONES = [
+            { id: 'insurance', label: 'Travel Insurance Sorted', icon: 'fa-shield-halved' },
+            { id: 'boots_broken', label: 'Boots Broken In (2+ hikes)', icon: 'fa-shoe-prints' },
+            { id: 'liner_bought', label: 'Sleeping Bag Liner Bought', icon: 'fa-bed' },
+            { id: 'cash_ready', label: 'EUR Cash Withdrawn', icon: 'fa-money-bill' },
+        ];
+
+        const ACTIVITY_ICONS = {
+            hike: 'fa-person-hiking', run: 'fa-person-running', walk: 'fa-person-walking',
+            treadmill: 'fa-arrow-right-arrow-left', cycle: 'fa-bicycle', gym: 'fa-dumbbell'
+        };
+        const METRIC_UNITS = { km: 'km', elevation: 'm', sessions: '', manual: '' };
+
+        // Expose to window for inline HTML handlers
+        window.login = login;
+        window.logout = logout;
+        window.toggleKitItem = toggleKitItem;
+        window.copyCode = copyCode;
+        window.addBagClaim = addBagClaim;
+        window.removeBagClaim = removeBagClaim;
+        window.setBagChoice = setBagChoice;
+        window.clearBagChoice = clearBagChoice;
+        window.togglePayment = togglePayment;
+        window.logWorkout = logWorkout;
+        window.selectActivityType = selectActivityType;
+        window.setUserGoal = setUserGoal;
+        window.togglePassport = togglePassport;
+        window.setReadiness = setReadiness;
+        window.toggleMilestone = toggleMilestone;
+        window.submitFeedback = submitFeedback;
+        window.toggleFeedbackStatus = toggleFeedbackStatus;
+        window.openFeedbackModal = openFeedbackModal;
+        window.closeFeedbackModal = closeFeedbackModal;
+
+        // --- 2. AUTHENTICATION & INITIALIZATION ---
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                // Hide loading screen safely
+                const authLoading = document.getElementById('auth-loading');
+                if (authLoading) {
+                    authLoading.classList.add('opacity-0');
+                    setTimeout(() => authLoading.classList.add('hidden'), 500);
+                }
+                
+                // Check if user previously logged in
+                const savedFighterId = localStorage.getItem('tmb_fighter_id');
+                if (savedFighterId) {
+                    const fighterObj = users.find(u => u.id === savedFighterId);
+                    if (fighterObj) {
+                        login(fighterObj, false);
+                        return;
+                    }
+                }
+                renderLoginScreen();
+            } else {
+                try {
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                } catch (error) {
+                    console.error("Auth failed:", error);
+                    const authLoading = document.getElementById('auth-loading');
+                    if (authLoading) {
+                        authLoading.innerHTML = '<p class="text-red-500 font-bold p-4 text-center">Connection failed.<br><span class="text-sm font-normal">Check Firebase Auth settings.</span></p>';
+                    }
+                }
+            }
+        });
+
+        function renderLoginScreen() {
+            const grid = document.getElementById('fighter-grid');
+            if (grid) grid.innerHTML = '';
+            
+            const loginScreen = document.getElementById('login-screen');
+            if (loginScreen) {
+                loginScreen.classList.remove('hidden');
+                setTimeout(() => loginScreen.classList.remove('opacity-0'), 50);
+            }
+
+            users.forEach(user => {
+                const btn = document.createElement('button');
+                btn.className = 'fighter-card bg-slate-800/80 backdrop-blur-sm border border-slate-600 rounded-xl p-4 text-left hover:bg-slate-700 flex flex-col items-center justify-center text-center gap-3 group';
+                btn.onclick = () => window.login(user, true);
+                
+                btn.innerHTML = `
+                    <div class="w-14 h-14 rounded-full bg-slate-700 flex items-center justify-center group-hover:bg-brand-500/20 group-hover:text-brand-400 transition-colors text-slate-300 text-xl">
+                        <i class="fa-solid ${user.icon}"></i>
+                    </div>
+                    <div>
+                        <div class="font-bold text-white">${user.name}</div>
+                        <div class="text-xs text-slate-400 mt-1">${user.desc}</div>
+                    </div>
+                `;
+                if (grid) grid.appendChild(btn);
+            });
+        }
+
+        function login(fighter, animate) {
+            currentUser = fighter;
+            localStorage.setItem('tmb_fighter_id', fighter.id);
+            
+            // Update UI with User Data
+            const navUser = document.getElementById('nav-username');
+            if (navUser) navUser.innerText = fighter.name;
+            const mobileNavUser = document.getElementById('mobile-nav-username');
+            if (mobileNavUser) mobileNavUser.innerText = fighter.name;
+            const heroGreeting = document.getElementById('hero-greeting');
+            if (heroGreeting) heroGreeting.innerText = `Welcome back, ${fighter.name.split(' ')[0]}`;
+            const checklistName = document.getElementById('checklist-name');
+            if (checklistName) checklistName.innerText = `${fighter.name.split(' ')[0]}'s`;
+            const dashboardKitTitle = document.getElementById('dashboard-kit-title');
+            if (dashboardKitTitle) dashboardKitTitle.innerText = `${fighter.name.split(' ')[0]}'s Kit List`;
+
+            // Firebase Live Sync Listener
+            if (unsubSnapshot) unsubSnapshot(); // Clear old listener if switching users
+            
+            const docRef = doc(db, collectionPath, currentUser.id);
+            const listLoader = document.getElementById('list-loader');
+            if (listLoader) listLoader.classList.remove('hidden');
+            
+            unsubSnapshot = onSnapshot(docRef, (docSnap) => {
+                if (listLoader) listLoader.classList.add('hidden');
+                if (docSnap.exists()) {
+                    localKitData = docSnap.data();
+                } else {
+                    localKitData = {};
+                }
+                renderChecklist();
+            }, (error) => {
+                console.error("Firestore Listener Error:", error);
+                if (listLoader) listLoader.classList.add('hidden');
+            });
+
+            // Admin badges — show correct one based on role
+            renderPayments(); // triggers badge update too
+
+            // New feature listeners (shared docs — set up once per login)
+            if (unsubBag) unsubBag();
+            unsubBag = onSnapshot(bagDataRef(), snap => {
+                bagData = snap.exists() ? snap.data() : {};
+                renderBagClaimer();
+                renderBagRoster();
+            });
+
+            if (unsubPayments) unsubPayments();
+            unsubPayments = onSnapshot(paymentsRef(), snap => {
+                paymentsData = snap.exists() ? snap.data() : {};
+                renderPayments();
+            });
+
+            if (unsubTraining) unsubTraining();
+            unsubTraining = onSnapshot(trainingRef(), snap => {
+                trainingData = snap.exists() ? snap.data() : {};
+                renderTrainingLeaderboard();
+                renderAllActivitiesFeed();
+                renderMyActivities();
+                prefillGoalForm();
+            });
+
+            if (unsubPassport) unsubPassport();
+            unsubPassport = onSnapshot(passportRef(), snap => {
+                passportData = snap.exists() ? snap.data() : {};
+                renderPassportChecklist();
+            });
+
+            if (unsubReadiness) unsubReadiness();
+            unsubReadiness = onSnapshot(readinessRef(), snap => {
+                readinessData = snap.exists() ? snap.data() : {};
+                renderReadinessPoll();
+            });
+
+            if (unsubMilestones) unsubMilestones();
+            unsubMilestones = onSnapshot(milestonesRef(), snap => {
+                milestonesData = snap.exists() ? snap.data() : {};
+                renderMilestones();
+            });
+
+            if (unsubFeedback) unsubFeedback();
+            unsubFeedback = onSnapshot(feedbackRef(), snap => {
+                feedbackData = snap.exists() ? snap.data() : {};
+                renderFeedbackHub();
+            });
+
+            // Fetch live weather (no listener needed — one-off API call)
+            fetchWeather();
+
+            // Init activity type buttons
+            selectActivityType('hike');
+
+            // Goal metric select: show/hide manual progress field
+            const goalMetricEl = document.getElementById('goal-metric');
+            if (goalMetricEl) {
+                goalMetricEl.onchange = () => {
+                    const manualRow = document.getElementById('manual-progress-row');
+                    if (manualRow) manualRow.classList.toggle('hidden', goalMetricEl.value !== 'manual');
+                };
+            }
+
+            // Screen Transition
+            const loginScreen = document.getElementById('login-screen');
+            const mainApp = document.getElementById('main-app');
+
+            if (animate) {
+                if (loginScreen) loginScreen.classList.add('opacity-0');
+                setTimeout(() => {
+                    if (loginScreen) loginScreen.classList.add('hidden');
+                    if (mainApp) mainApp.classList.remove('hidden');
+                    setTimeout(() => { if (mainApp) mainApp.classList.remove('opacity-0'); }, 50);
+                }, 500);
+            } else {
+                if (loginScreen) {
+                    loginScreen.classList.add('hidden');
+                    loginScreen.classList.add('opacity-0');
+                }
+                if (mainApp) {
+                    mainApp.classList.remove('hidden');
+                    mainApp.classList.remove('opacity-0');
+                }
+            }
+        }
+
+        function logout() {
+            if (unsubSnapshot) { unsubSnapshot(); unsubSnapshot = null; }
+            if (unsubBag) { unsubBag(); unsubBag = null; }
+            if (unsubPayments) { unsubPayments(); unsubPayments = null; }
+            if (unsubTraining) { unsubTraining(); unsubTraining = null; }
+            if (unsubPassport) { unsubPassport(); unsubPassport = null; }
+            if (unsubReadiness) { unsubReadiness(); unsubReadiness = null; }
+            if (unsubMilestones) { unsubMilestones(); unsubMilestones = null; }
+            if (unsubFeedback) { unsubFeedback(); unsubFeedback = null; }
+            currentUser = null;
+            localKitData = {};
+            localStorage.removeItem('tmb_fighter_id');
+            
+            const loginScreen = document.getElementById('login-screen');
+            const mainApp = document.getElementById('main-app');
+            
+            if (mainApp) mainApp.classList.add('opacity-0');
+            setTimeout(() => {
+                if (mainApp) mainApp.classList.add('hidden');
+                renderLoginScreen();
+            }, 500);
+            
+            const mobileMenu = document.getElementById('mobile-menu');
+            if (mobileMenu) mobileMenu.classList.add('hidden');
+        }
+
+        // --- 3. INTERACTIVE CHECKLIST LOGIC ---
+        function renderChecklist() {
+            if (!currentUser) return;
+            
+            const container = document.getElementById('interactive-checklist');
+            if (!container) return;
+            container.innerHTML = '';
+            let checkedCount = 0;
+
+            kitItems.forEach(item => {
+                const isChecked = localKitData[item.id] === true;
+                if (isChecked) checkedCount++;
+
+                const label = document.createElement('label');
+                label.className = 'flex items-center gap-4 p-3 rounded-xl bg-slate-800 border border-slate-700 cursor-pointer hover:bg-slate-750 transition-colors group';
+                
+                label.innerHTML = `
+                    <div class="relative flex items-center justify-center">
+                        <input type="checkbox" class="kit-checkbox opacity-0 absolute h-0 w-0" ${isChecked ? 'checked' : ''} onchange="window.toggleKitItem('${item.id}', this.checked)">
+                        <div class="w-6 h-6 rounded border-2 border-slate-500 bg-slate-900 transition-colors flex items-center justify-center group-hover:border-brand-400">
+                            <svg class="w-4 h-4 text-white opacity-0 transform scale-50 transition-all duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                        </div>
+                    </div>
+                    <span class="text-slate-200 text-sm select-none ${isChecked ? 'text-slate-400 line-through' : ''}">${item.label}</span>
+                `;
+                container.appendChild(label);
+            });
+
+            updateKitProgress(checkedCount);
+        }
+
+        async function toggleKitItem(itemId, isChecked) {
+            if (!currentUser) return;
+            
+            // Optimistic UI Update (feels instant to the user)
+            localKitData[itemId] = isChecked;
+            renderChecklist();
+            
+            const listLoader = document.getElementById('list-loader');
+            if (listLoader) listLoader.classList.remove('hidden');
+            
+            try {
+                // Save live to Firestore
+                const docRef = doc(db, collectionPath, currentUser.id);
+                await setDoc(docRef, { [itemId]: isChecked }, { merge: true });
+            } catch (error) {
+                console.error("Failed to save kit item:", error);
+                // Revert UI if the save fails
+                localKitData[itemId] = !isChecked;
+                renderChecklist();
+            } finally {
+                if (listLoader) listLoader.classList.add('hidden');
+            }
+        }
+
+        function updateKitProgress(count) {
+            document.getElementById('kit-progress').innerText = count;
+            const progressEl = document.getElementById('dashboard-kit-title').nextElementSibling;
+            if (count === kitItems.length) {
+                progressEl.innerHTML = `<span class="text-brand-600 font-bold"><i class="fa-solid fa-check-circle"></i> Fully packed!</span>`;
+            } else {
+                progressEl.innerHTML = `<span id="kit-progress">${count}</span>/${kitItems.length} items packed.`;
+            }
+        }
+
+        // --- 4. GENERAL UI LOGIC ---
+        // Mobile Menu Toggle
+        document.getElementById('mobile-menu-btn').addEventListener('click', () => {
+            document.getElementById('mobile-menu').classList.toggle('hidden');
+        });
+
+        document.querySelectorAll('#mobile-menu a').forEach(link => {
+            link.addEventListener('click', () => {
+                document.getElementById('mobile-menu').classList.add('hidden');
+            });
+        });
+
+        // Countdown Timer
+        const countDownDate = new Date("August 29, 2026 08:00:00").getTime();
+        setInterval(function() {
+            const now = new Date().getTime();
+            const distance = countDownDate - now;
+
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+
+            document.getElementById("days").innerHTML = Math.max(0, days).toString().padStart(2, '0');
+            document.getElementById("hours").innerHTML = Math.max(0, hours).toString().padStart(2, '0');
+            document.getElementById("minutes").innerHTML = Math.max(0, minutes).toString().padStart(2, '0');
+        }, 1000);
+
+        // Copy to clipboard
+        function copyCode() {
+            const codeText = document.getElementById('discount-code').innerText;
+            navigator.clipboard.writeText(codeText).then(showCopyFeedback).catch(err => {
+                const textArea = document.createElement("textarea");
+                textArea.value = codeText;
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    showCopyFeedback();
+                } catch (err) {}
+                document.body.removeChild(textArea);
+            });
+        }
+
+        function showCopyFeedback() {
+            const feedback = document.getElementById('copy-feedback');
+            feedback.classList.remove('opacity-0');
+            feedback.classList.add('opacity-100');
+            setTimeout(() => {
+                feedback.classList.remove('opacity-100');
+                feedback.classList.add('opacity-0');
+            }, 2000);
+        }
+
+        // ============================================================
+        // === BAG CLAIMER & ROSTER ===
+        // ============================================================
+        async function addBagClaim() {
+            if (!currentUser) return;
+            const name = document.getElementById('bag-item-name').value.trim();
+            const weight = parseFloat(document.getElementById('bag-item-weight').value);
+            if (!name || !weight || weight <= 0) return;
+            const existing = (bagData.claims || {})[currentUser.id] || [];
+            await setDoc(bagDataRef(), { claims: { [currentUser.id]: [...existing, { name, kg: weight }] } }, { merge: true });
+            document.getElementById('bag-item-name').value = '';
+            document.getElementById('bag-item-weight').value = '';
+            document.getElementById('bag-claim-form').classList.add('hidden');
+        }
+
+        async function removeBagClaim(index) {
+            if (!currentUser) return;
+            const existing = [...((bagData.claims || {})[currentUser.id] || [])];
+            existing.splice(index, 1);
+            await setDoc(bagDataRef(), { claims: { [currentUser.id]: existing } }, { merge: true });
+        }
+
+        async function setBagChoice(choice) {
+            if (!currentUser) return;
+            await setDoc(bagDataRef(), { roster: { [currentUser.id]: choice } }, { merge: true });
+        }
+
+        function renderBagClaimer() {
+            const BAG_KG = 26, BAG_COST = 46.99;
+            const claims = bagData.claims || {};
+            let totalClaimed = 0;
+            const userKg = {};
+            users.forEach(u => {
+                const kg = (claims[u.id] || []).reduce((s, c) => s + (c.kg || 0), 0);
+                userKg[u.id] = kg;
+                totalClaimed += kg;
+            });
+            const remaining = Math.max(0, BAG_KG - totalClaimed);
+            const pct = Math.min(100, (totalClaimed / BAG_KG) * 100);
+
+            const remEl = document.getElementById('bag-remaining');
+            if (remEl) remEl.textContent = remaining.toFixed(1);
+            const bar = document.getElementById('bag-capacity-bar');
+            if (bar) {
+                bar.style.width = pct + '%';
+                bar.className = `h-3 rounded-full transition-all duration-500 ${pct > 85 ? 'bg-red-500' : pct > 60 ? 'bg-amber-400' : 'bg-brand-500'}`;
+            }
+            const list = document.getElementById('bag-claims-list');
+            if (!list) return;
+            const userClaims = users.filter(u => (claims[u.id] || []).length > 0);
+            if (userClaims.length === 0) {
+                list.innerHTML = '<p class="text-sm text-gray-400 text-center py-2">No items claimed yet.</p>';
+            } else {
+                list.innerHTML = userClaims.map(u => {
+                    const isOwn = currentUser && u.id === currentUser.id;
+                    const tags = (claims[u.id] || []).map((c, i) =>
+                        `<span class="inline-flex items-center gap-1 text-xs bg-white border border-gray-200 rounded-full px-2 py-0.5 mr-1 mb-1">${c.name} (${c.kg}kg)${isOwn ? `<button onclick="window.removeBagClaim(${i})" class="text-red-400 hover:text-red-600 leading-none ml-0.5 font-bold">×</button>` : ''}</span>`
+                    ).join('');
+                    return `<div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><div class="flex justify-between items-center mb-1.5"><span class="text-sm font-semibold text-gray-800">${u.name}</span><span class="text-xs text-gray-500 font-medium">${userKg[u.id].toFixed(1)}kg</span></div><div>${tags}</div></div>`;
+                }).join('');
+            }
+            const claimers = users.filter(u => userKg[u.id] > 0);
+            const splitEl = document.getElementById('bag-cost-split');
+            const splitList = document.getElementById('bag-cost-list');
+            if (splitEl && splitList) {
+                if (claimers.length > 0 && totalClaimed > 0) {
+                    splitEl.classList.remove('hidden');
+                    splitList.innerHTML = claimers.map(u => {
+                        const share = (userKg[u.id] / totalClaimed) * BAG_COST;
+                        return `<div class="flex justify-between text-xs text-green-800"><span>${u.name.split(' ')[0]}</span><span class="font-bold">£${share.toFixed(2)}</span></div>`;
+                    }).join('');
+                } else {
+                    splitEl.classList.add('hidden');
+                }
+            }
+        }
+
+        function renderBagRoster() {
+            const roster = bagData.roster || {};
+            const tbody = document.getElementById('bag-roster-table');
+            if (!tbody) return;
+            const labels = {
+                under_seat: { text: 'Under-Seat (Free)', cls: 'bg-green-100 text-green-700' },
+                large_cabin: { text: 'Large Cabin (~£33)', cls: 'bg-blue-100 text-blue-700' },
+                hold: { text: 'Hold Bag (~£47)', cls: 'bg-purple-100 text-purple-700' },
+            };
+            tbody.innerHTML = users.map(u => {
+                const c = roster[u.id];
+                const badge = (c && labels[c]) ? `<span class="text-xs px-2.5 py-1 rounded-full font-semibold ${labels[c].cls}">${labels[c].text}</span>` : '<span class="text-xs text-gray-400 italic">Not set</span>';
+                return `<tr class="border-b border-gray-100 last:border-0"><td class="py-3 text-sm font-medium text-gray-800">${u.name}</td><td class="py-3">${badge}</td></tr>`;
+            }).join('');
+            if (currentUser) {
+                const myChoice = roster[currentUser.id] || '';
+                document.querySelectorAll('.bag-choice-btn').forEach(btn => {
+                    const active = myChoice && myChoice === btn.dataset.choice;
+                    btn.className = `bag-choice-btn text-xs px-3 py-2 rounded-full border transition-colors ${active ? 'bg-brand-600 text-white border-brand-600 font-semibold' : 'bg-white text-gray-600 border-gray-300 hover:border-brand-400'}`;
+                });
+            }
+        }
+
+        // ============================================================
+        // === FINANCE: PAYMENTS ===
+        // ============================================================
+        const PAYMENT_STAGES = [
+            { key: 'deposit', label: '£90 Dep.' },
+            { key: 'balance', label: 'Jun. Bal.' },
+            { key: 'flights', label: 'Flights' },
+        ];
+
+        async function togglePayment(userId, stage) {
+            if (!currentUser || currentUser.id !== 'matt_b') return;
+            const current = (paymentsData[userId] || {})[stage] || false;
+            await setDoc(paymentsRef(), { [userId]: { [stage]: !current } }, { merge: true });
+        }
+
+        function renderPayments() {
+            const container = document.getElementById('payment-tracker');
+            if (!container) return;
+            const isAdmin = currentUser && currentUser.id === 'matt_b';
+
+            // Show correct role badge
+            const adminBadge = document.getElementById('admin-badge');
+            const readonlyBadge = document.getElementById('readonly-badge');
+            if (adminBadge) adminBadge.classList.toggle('hidden', !isAdmin);
+            if (readonlyBadge) readonlyBadge.classList.toggle('hidden', isAdmin);
+
+            container.innerHTML = users.map(u => {
+                const uData = paymentsData[u.id] || {};
+                const firstName = u.name.split(' ')[0];
+                const stages = PAYMENT_STAGES.map(s => {
+                    const paid = uData[s.key] === true;
+                    if (isAdmin) {
+                        return `<button onclick="window.togglePayment('${u.id}','${s.key}')" title="Toggle ${s.label}" class="w-12 sm:w-16 h-8 sm:h-9 rounded-xl border-2 flex items-center justify-center transition-all ${paid ? 'bg-brand-500 border-brand-500 text-white' : 'bg-gray-100 border-gray-200 text-gray-400 hover:border-brand-400'}"><i class="fa-solid ${paid ? 'fa-check' : 'fa-xmark'} text-xs"></i></button>`;
+                    }
+                    return `<span class="w-12 sm:w-16 h-8 sm:h-9 rounded-xl border-2 flex items-center justify-center ${paid ? 'bg-brand-50 border-brand-300 text-brand-600' : 'bg-gray-50 border-gray-200 text-gray-300'}"><i class="fa-solid ${paid ? 'fa-check' : 'fa-xmark'} text-xs"></i></span>`;
+                }).join('');
+                return `<div class="flex items-center gap-2 sm:gap-3 py-2 border-b border-gray-50 last:border-0"><span class="flex-1 text-xs sm:text-sm font-medium text-gray-800 truncate"><span class="sm:hidden">${firstName}</span><span class="hidden sm:inline">${u.name}</span></span><div class="flex gap-1.5 sm:gap-3">${stages}</div></div>`;
+            }).join('');
+        }
+
+        // ============================================================
+        // === BAG: CLEAR CHOICE ===
+        // ============================================================
+        async function clearBagChoice() {
+            if (!currentUser) return;
+            // Store empty string — render treats '' same as missing (shows "Not set")
+            await setDoc(bagDataRef(), { roster: { [currentUser.id]: '' } }, { merge: true });
+        }
+
+        // ============================================================
+        // === TRAINING: ACTIVITY TYPE SELECTOR ===
+        // ============================================================
+        function selectActivityType(type) {
+            selectedActivityType = type;
+            document.querySelectorAll('.activity-type-btn').forEach(btn => {
+                const active = btn.dataset.type === type;
+                btn.className = `activity-type-btn text-xs px-2.5 py-1.5 rounded-lg border transition-colors font-medium ${active ? 'bg-brand-500 border-brand-500 text-white' : 'border-slate-600 bg-slate-800 text-slate-300 hover:border-brand-400'}`;
+            });
+        }
+
+        // ============================================================
+        // === TRAINING: LOG WORKOUT ===
+        // ============================================================
+        async function logWorkout() {
+            if (!currentUser) return;
+            const location = document.getElementById('workout-location').value.trim();
+            const km = parseFloat(document.getElementById('workout-km').value) || 0;
+            const elevation = parseInt(document.getElementById('workout-elevation').value) || 0;
+            if (!location && !km && !elevation) return; // need at least one field
+            const activity = { type: selectedActivityType, location: location || selectedActivityType, km, elevation, ts: Date.now() };
+            const existing = getActivities(currentUser.id);
+            await setDoc(trainingRef(), { [currentUser.id]: { activities: [...existing, activity] } }, { merge: true });
+            document.getElementById('workout-location').value = '';
+            document.getElementById('workout-km').value = '';
+            document.getElementById('workout-elevation').value = '';
+        }
+
+        // Helper: get activities array for a user (backward-compatible with old 'hikes' field)
+        function getActivities(userId) {
+            const data = trainingData[userId] || {};
+            return data.activities || data.hikes || [];
+        }
+
+        // ============================================================
+        // === TRAINING: SET PERSONAL GOAL ===
+        // ============================================================
+        async function setUserGoal() {
+            if (!currentUser) return;
+            const description = document.getElementById('goal-description').value.trim();
+            const metric = document.getElementById('goal-metric').value;
+            const target = parseFloat(document.getElementById('goal-target').value);
+            if (!description || !target || target <= 0) return;
+            const manualProgress = metric === 'manual'
+                ? (parseFloat(document.getElementById('goal-manual-progress').value) || 0)
+                : undefined;
+            const goal = { description, metric, target, ...(manualProgress !== undefined && { manualProgress }) };
+            await setDoc(trainingRef(), { [currentUser.id]: { goal } }, { merge: true });
+        }
+
+        // Pre-fill the goal form with the current user's saved goal
+        function prefillGoalForm() {
+            if (!currentUser) return;
+            const goal = (trainingData[currentUser.id] || {}).goal;
+            if (!goal) return;
+            const descEl = document.getElementById('goal-description');
+            const metricEl = document.getElementById('goal-metric');
+            const targetEl = document.getElementById('goal-target');
+            const manualEl = document.getElementById('goal-manual-progress');
+            const manualRow = document.getElementById('manual-progress-row');
+            if (descEl && !descEl.value) descEl.value = goal.description || '';
+            if (metricEl) metricEl.value = goal.metric || 'km';
+            if (targetEl && !targetEl.value) targetEl.value = goal.target || '';
+            if (goal.metric === 'manual') {
+                if (manualRow) manualRow.classList.remove('hidden');
+                if (manualEl && !manualEl.value) manualEl.value = goal.manualProgress || '';
+            }
+        }
+
+        // ============================================================
+        // === TRAINING: RENDER LEADERBOARD (personal goals) ===
+        // ============================================================
+        function renderTrainingLeaderboard() {
+            const container = document.getElementById('training-leaderboard');
+            if (!container) return;
+
+            const ranked = users.map(u => {
+                const activities = getActivities(u.id);
+                const goal = (trainingData[u.id] || {}).goal || null;
+                const totalKm = activities.reduce((s, a) => s + (a.km || 0), 0);
+                const totalElev = activities.reduce((s, a) => s + (a.elevation || 0), 0);
+                const sessionCount = activities.length;
+                let current = 0, pct = 0;
+                if (goal) {
+                    switch (goal.metric) {
+                        case 'km':       current = totalKm;      break;
+                        case 'elevation':current = totalElev;    break;
+                        case 'sessions': current = sessionCount; break;
+                        case 'manual':   current = goal.manualProgress || 0; break;
+                    }
+                    pct = goal.target > 0 ? Math.min(100, (current / goal.target) * 100) : 0;
+                }
+                return { ...u, activities, goal, totalKm, totalElev, sessionCount, current, pct };
+            }).sort((a, b) => {
+                if (a.goal && !b.goal) return -1;
+                if (!a.goal && b.goal) return 1;
+                return b.pct - a.pct;
+            });
+
+            const medals = ['🥇', '🥈', '🥉'];
+            let medalIdx = 0;
+            container.innerHTML = ranked.map(u => {
+                if (!u.goal) {
+                    return `<div class="opacity-40">
+                        <div class="flex justify-between items-center mb-1.5">
+                            <span class="text-sm font-medium text-gray-600">${u.name}</span>
+                            <span class="text-xs text-gray-400 italic">No goal set yet</span>
+                        </div>
+                        <div class="w-full bg-gray-100 rounded-full h-2"></div>
+                    </div>`;
+                }
+                const medal = u.current > 0 && medalIdx < 3 ? medals[medalIdx++] : '';
+                const unit = METRIC_UNITS[u.goal.metric];
+                const displayCurrent = u.goal.metric === 'sessions' ? u.current : u.current.toFixed(1);
+                const barColor = u.pct >= 100 ? 'bg-brand-500' : u.pct >= 60 ? 'bg-brand-400' : 'bg-brand-300';
+                return `<div>
+                    <div class="flex justify-between items-baseline mb-1">
+                        <span class="text-sm font-semibold text-gray-800">${medal} ${u.name}</span>
+                        <span class="text-xs text-gray-500 shrink-0 ml-2">${displayCurrent}${unit} / ${u.goal.target}${unit} <span class="font-bold text-brand-600">(${Math.round(u.pct)}%)</span></span>
+                    </div>
+                    <div class="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden mb-1">
+                        <div class="${barColor} h-2.5 rounded-full transition-all duration-700" style="width:${u.pct}%"></div>
+                    </div>
+                    <p class="text-xs text-gray-400 italic">${u.goal.description}</p>
+                </div>`;
+            }).join('');
+        }
+
+        // ============================================================
+        // === TRAINING: RECENT ACTIVITY FEED (all users) ===
+        // ============================================================
+        function renderAllActivitiesFeed() {
+            const container = document.getElementById('all-activities-feed');
+            if (!container) return;
+            let all = [];
+            users.forEach(u => {
+                getActivities(u.id).forEach(a => all.push({ ...a, userName: u.name.split(' ')[0], userIcon: u.icon }));
+            });
+            all.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+            const recent = all.slice(0, 25);
+            if (recent.length === 0) {
+                container.innerHTML = '<p class="text-gray-400 text-sm italic text-center py-4">No activity logged yet. Someone get moving...</p>';
+                return;
+            }
+            container.innerHTML = recent.map(a => {
+                const icon = ACTIVITY_ICONS[a.type] || 'fa-person-hiking';
+                const date = a.ts ? new Date(a.ts).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '';
+                const stats = [a.km ? `${a.km}km` : '', a.elevation ? `${a.elevation}m elev.` : ''].filter(Boolean).join(' · ');
+                return `<div class="flex items-center gap-3 py-2 border-b border-gray-50 last:border-0">
+                    <div class="w-8 h-8 bg-brand-50 text-brand-600 rounded-full flex items-center justify-center flex-shrink-0 text-xs">
+                        <i class="fa-solid ${icon}"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <span class="text-sm font-semibold text-gray-800">${a.userName}</span>
+                        <span class="text-xs text-gray-500"> — ${a.location}${stats ? ` · ${stats}` : ''}</span>
+                    </div>
+                    <span class="text-xs text-gray-400 shrink-0">${date}</span>
+                </div>`;
+            }).join('');
+        }
+
+        // ============================================================
+        // === TRAINING: MY RECENT ACTIVITY (right panel) ===
+        // ============================================================
+        function renderMyActivities() {
+            const container = document.getElementById('my-activities-list');
+            if (!container || !currentUser) return;
+            const activities = getActivities(currentUser.id).slice().reverse().slice(0, 6);
+            if (activities.length === 0) {
+                container.innerHTML = '<p class="text-slate-500 italic text-xs">No activity logged yet.</p>';
+                return;
+            }
+            container.innerHTML = activities.map(a => {
+                const icon = ACTIVITY_ICONS[a.type] || 'fa-person-hiking';
+                const date = a.ts ? new Date(a.ts).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '';
+                const stats = [a.km ? `${a.km}km` : '', a.elevation ? `${a.elevation}m` : ''].filter(Boolean).join(' · ');
+                return `<div class="flex justify-between items-center py-1.5 border-b border-slate-800 last:border-0">
+                    <span class="text-slate-300 text-xs flex items-center gap-1.5 min-w-0 truncate">
+                        <i class="fa-solid ${icon} text-brand-400 flex-shrink-0"></i> ${a.location}
+                    </span>
+                    <span class="text-slate-500 text-xs shrink-0 ml-2">${stats} <span class="text-slate-600">${date}</span></span>
+                </div>`;
+            }).join('');
+        }
+
+        // ============================================================
+        // === PASSPORT VAULT ===
+        // ============================================================
+        async function togglePassport(userId) {
+            if (!currentUser) return;
+            if (currentUser.id !== userId && currentUser.id !== 'matt_b') return;
+            const current = passportData[userId] || false;
+            await setDoc(passportRef(), { [userId]: !current }, { merge: true });
+        }
+
+        // ============================================================
+        // === WEATHER: FETCH & RENDER (Open-Meteo, Chamonix) ===
+        // ============================================================
+        async function fetchWeather() {
+            const container = document.getElementById('weather-forecast');
+            if (!container) return;
+            try {
+                const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=45.9237&longitude=6.8694&daily=temperature_2m_max,temperature_2m_min,weathercode&timezone=Europe%2FParis&forecast_days=7');
+                const data = await res.json();
+                renderWeather(data, container);
+            } catch (err) {
+                console.error('Weather fetch failed:', err);
+                container.innerHTML = '<p class="text-sm text-blue-400 italic">Could not load weather data.</p>';
+            }
+        }
+
+        function renderWeather(data, container) {
+            const WMO_ICONS = {
+                0: ['fa-sun', 'text-yellow-400', 'Clear'],
+                1: ['fa-sun', 'text-yellow-400', 'Mostly Clear'],
+                2: ['fa-cloud-sun', 'text-amber-400', 'Partly Cloudy'],
+                3: ['fa-cloud', 'text-gray-400', 'Overcast'],
+                45: ['fa-smog', 'text-gray-400', 'Fog'],
+                48: ['fa-smog', 'text-gray-400', 'Rime Fog'],
+                51: ['fa-cloud-rain', 'text-blue-300', 'Light Drizzle'],
+                53: ['fa-cloud-rain', 'text-blue-400', 'Drizzle'],
+                55: ['fa-cloud-rain', 'text-blue-500', 'Heavy Drizzle'],
+                61: ['fa-cloud-showers-heavy', 'text-blue-400', 'Light Rain'],
+                63: ['fa-cloud-showers-heavy', 'text-blue-500', 'Rain'],
+                65: ['fa-cloud-showers-heavy', 'text-blue-600', 'Heavy Rain'],
+                71: ['fa-snowflake', 'text-sky-300', 'Light Snow'],
+                73: ['fa-snowflake', 'text-sky-400', 'Snow'],
+                75: ['fa-snowflake', 'text-sky-500', 'Heavy Snow'],
+                80: ['fa-cloud-showers-heavy', 'text-blue-400', 'Rain Showers'],
+                81: ['fa-cloud-showers-heavy', 'text-blue-500', 'Rain Showers'],
+                82: ['fa-cloud-showers-heavy', 'text-blue-600', 'Heavy Showers'],
+                95: ['fa-bolt', 'text-yellow-500', 'Thunderstorm'],
+                96: ['fa-bolt', 'text-yellow-600', 'Thunderstorm + Hail'],
+                99: ['fa-bolt', 'text-red-500', 'Severe T-storm'],
+            };
+            const days = data.daily;
+            if (!days || !days.time) {
+                container.innerHTML = '<p class="text-sm text-blue-400 italic">No forecast data available.</p>';
+                return;
+            }
+            container.innerHTML = days.time.map((date, i) => {
+                const code = days.weathercode[i];
+                const [icon, color, label] = WMO_ICONS[code] || ['fa-question', 'text-gray-400', 'Unknown'];
+                const hi = Math.round(days.temperature_2m_max[i]);
+                const lo = Math.round(days.temperature_2m_min[i]);
+                const dayName = new Date(date).toLocaleDateString('en-GB', { weekday: 'short' });
+                return `<div class="flex-shrink-0 bg-white rounded-xl p-2.5 sm:p-3 border border-blue-100 text-center min-w-[70px] sm:min-w-[80px] shadow-sm">
+                    <p class="text-[10px] sm:text-xs font-bold text-gray-600 mb-1">${dayName}</p>
+                    <i class="fa-solid ${icon} ${color} text-lg sm:text-xl mb-1"></i>
+                    <p class="text-[10px] sm:text-xs text-gray-500 mb-0.5">${label}</p>
+                    <p class="text-sm font-bold text-gray-800">${hi}°</p>
+                    <p class="text-[10px] sm:text-xs text-gray-400">${lo}°</p>
+                </div>`;
+            }).join('');
+        }
+
+        // ============================================================
+        // === READINESS POLL ===
+        // ============================================================
+        async function setReadiness(isReady) {
+            if (!currentUser) return;
+            await setDoc(readinessRef(), { [currentUser.id]: isReady }, { merge: true });
+        }
+
+        function renderReadinessPoll() {
+            const container = document.getElementById('readiness-poll');
+            if (!container || !currentUser) return;
+
+            const readyCount = users.filter(u => readinessData[u.id] === true).length;
+            const summaryColor = readyCount === users.length ? 'bg-green-100 text-green-700 border-green-200' : 'bg-gray-100 text-gray-500 border-gray-200';
+
+            const rows = users.map(u => {
+                const status = readinessData[u.id];
+                const isMe = currentUser.id === u.id;
+                let badge, bg, border;
+                if (status === true) {
+                    badge = `<span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-semibold shrink-0">Ready!</span>`;
+                    bg = 'bg-green-50'; border = 'border-green-200';
+                } else if (status === false) {
+                    badge = `<span class="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-semibold shrink-0">Not Yet</span>`;
+                    bg = 'bg-red-50'; border = 'border-red-200';
+                } else {
+                    badge = `<span class="text-xs bg-gray-100 text-gray-400 px-2 py-0.5 rounded-full font-semibold shrink-0">Unknown</span>`;
+                    bg = 'bg-gray-50'; border = 'border-gray-200';
+                }
+                const buttons = isMe
+                    ? `<div class="flex gap-1.5 shrink-0">
+                        <button onclick="window.setReadiness(true)" class="w-9 h-9 rounded-lg border transition-colors flex items-center justify-center ${status === true ? 'bg-green-500 text-white border-green-500' : 'bg-white text-gray-500 border-gray-300 hover:border-green-400 hover:bg-green-50'}"><i class="fa-solid fa-thumbs-up text-sm"></i></button>
+                        <button onclick="window.setReadiness(false)" class="w-9 h-9 rounded-lg border transition-colors flex items-center justify-center ${status === false ? 'bg-red-500 text-white border-red-500' : 'bg-white text-gray-500 border-gray-300 hover:border-red-400 hover:bg-red-50'}"><i class="fa-solid fa-thumbs-down text-sm"></i></button>
+                       </div>`
+                    : '';
+                return `<div class="flex items-center gap-3 p-3 rounded-xl ${bg} border ${border}">
+                    <span class="text-sm font-semibold text-gray-800 flex-1 min-w-0 truncate">${u.name}</span>
+                    ${badge}
+                    ${buttons}
+                </div>`;
+            }).join('');
+
+            container.innerHTML = `
+                <div class="flex items-center justify-center mb-3">
+                    <span class="text-xs ${summaryColor} border px-3 py-1 rounded-full font-bold">${readyCount} / ${users.length} Ready</span>
+                </div>
+                ${rows}
+            `;
+        }
+
+        // ============================================================
+        // === PRE-TRIP MILESTONES ===
+        // ============================================================
+        async function toggleMilestone(milestoneId, isGroup) {
+            if (!currentUser) return;
+            if (isGroup) {
+                // Only admin (matt_b) can toggle group milestones
+                if (currentUser.id !== 'matt_b') return;
+                const groupData = milestonesData.group || {};
+                const current = groupData[milestoneId] || false;
+                await setDoc(milestonesRef(), { group: { [milestoneId]: !current } }, { merge: true });
+            } else {
+                // Personal milestones — each user toggles their own
+                const personalData = (milestonesData.personal || {})[currentUser.id] || {};
+                const current = personalData[milestoneId] || false;
+                await setDoc(milestonesRef(), { personal: { [currentUser.id]: { [milestoneId]: !current } } }, { merge: true });
+            }
+        }
+
+        function renderMilestones() {
+            const container = document.getElementById('milestones-list');
+            const badge = document.getElementById('milestone-progress-badge');
+            if (!container || !currentUser) return;
+
+            const isAdmin = currentUser.id === 'matt_b';
+            const groupData = milestonesData.group || {};
+            const personalData = (milestonesData.personal || {})[currentUser.id] || {};
+
+            let totalItems = GROUP_MILESTONES.length + PERSONAL_MILESTONES.length;
+            let doneCount = 0;
+
+            const groupHtml = GROUP_MILESTONES.map(m => {
+                const done = groupData[m.id] === true;
+                if (done) doneCount++;
+                return `<div class="flex items-center gap-3 p-2.5 rounded-lg border ${done ? 'bg-brand-50 border-brand-200' : 'bg-gray-50 border-gray-200'} ${isAdmin ? 'cursor-pointer hover:border-brand-400 transition-colors' : ''}" ${isAdmin ? `onclick="window.toggleMilestone('${m.id}', true)"` : ''}>
+                    <div class="w-6 h-6 rounded-full ${done ? 'bg-brand-500' : 'border-2 border-gray-300 bg-white'} flex items-center justify-center flex-shrink-0">
+                        ${done ? '<i class="fa-solid fa-check text-white text-[10px]"></i>' : ''}
+                    </div>
+                    <i class="fa-solid ${m.icon} text-sm ${done ? 'text-brand-500' : 'text-gray-400'}"></i>
+                    <span class="text-sm ${done ? 'text-gray-800 font-medium' : 'text-gray-500'}">${m.label}</span>
+                    <span class="ml-auto text-[10px] uppercase font-bold tracking-wider ${done ? 'text-brand-500' : 'text-gray-300'}">Group</span>
+                </div>`;
+            }).join('');
+
+            const personalHtml = PERSONAL_MILESTONES.map(m => {
+                const done = personalData[m.id] === true;
+                if (done) doneCount++;
+                return `<div class="flex items-center gap-3 p-2.5 rounded-lg border ${done ? 'bg-brand-50 border-brand-200' : 'bg-gray-50 border-gray-200'} cursor-pointer hover:border-brand-400 transition-colors" onclick="window.toggleMilestone('${m.id}', false)">
+                    <div class="w-6 h-6 rounded-full ${done ? 'bg-brand-500' : 'border-2 border-gray-300 bg-white'} flex items-center justify-center flex-shrink-0">
+                        ${done ? '<i class="fa-solid fa-check text-white text-[10px]"></i>' : ''}
+                    </div>
+                    <i class="fa-solid ${m.icon} text-sm ${done ? 'text-brand-500' : 'text-gray-400'}"></i>
+                    <span class="text-sm ${done ? 'text-gray-800 font-medium' : 'text-gray-500'}">${m.label}</span>
+                    <span class="ml-auto text-[10px] uppercase font-bold tracking-wider ${done ? 'text-brand-500' : 'text-gray-300'}">You</span>
+                </div>`;
+            }).join('');
+
+            container.innerHTML = `
+                <p class="text-[10px] uppercase font-bold tracking-wider text-gray-400 mb-1.5">Group Tasks ${isAdmin ? '(tap to toggle)' : '(Matt B only)'}</p>
+                ${groupHtml}
+                <div class="border-t border-gray-100 my-2"></div>
+                <p class="text-[10px] uppercase font-bold tracking-wider text-gray-400 mb-1.5">Your Tasks (tap to toggle)</p>
+                ${personalHtml}
+            `;
+
+            if (badge) {
+                badge.textContent = `${doneCount} / ${totalItems}`;
+            }
+        }
+
+        function renderPassportChecklist() {
+            const container = document.getElementById('passport-checklist');
+            if (!container || !currentUser) return;
+            container.innerHTML = users.map(u => {
+                const sent = passportData[u.id] === true;
+                const canToggle = currentUser.id === u.id || currentUser.id === 'matt_b';
+                const checkIcon = sent
+                    ? `<div class="w-7 h-7 rounded-full bg-brand-500 flex items-center justify-center flex-shrink-0 shadow-sm"><i class="fa-solid fa-check text-white text-xs"></i></div>`
+                    : `<div class="w-7 h-7 rounded-full border-2 border-gray-300 flex-shrink-0 bg-white"></div>`;
+                return `<div class="flex items-center gap-3 p-3 rounded-xl border ${sent ? 'bg-brand-50 border-brand-200' : 'bg-gray-50 border-gray-200'} ${canToggle ? 'cursor-pointer hover:border-brand-400 transition-colors' : ''}" ${canToggle ? `onclick="window.togglePassport('${u.id}')"` : ''}>
+                    ${checkIcon}
+                    <div class="flex-1 min-w-0">
+                        <span class="text-sm font-semibold text-gray-800 block">${u.name}</span>
+                        <span class="text-xs ${sent ? 'text-brand-600 font-medium' : 'text-gray-400'}">${sent ? 'Sent to Matt B ✓' : 'Not yet sent'}</span>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        // ============================================================
+        // === FEEDBACK HUB ===
+        // ============================================================
+        function openFeedbackModal() {
+            const modal = document.getElementById('feedback-modal');
+            if (modal) modal.classList.remove('hidden');
+            const textarea = document.getElementById('feedback-text');
+            if (textarea) {
+                textarea.value = '';
+                textarea.focus();
+                textarea.oninput = () => {
+                    const count = document.getElementById('feedback-char-count');
+                    if (count) count.textContent = `${textarea.value.length} / 500`;
+                };
+            }
+            const count = document.getElementById('feedback-char-count');
+            if (count) count.textContent = '0 / 500';
+        }
+
+        function closeFeedbackModal() {
+            const modal = document.getElementById('feedback-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        async function submitFeedback() {
+            if (!currentUser) return;
+            const textarea = document.getElementById('feedback-text');
+            const text = (textarea ? textarea.value : '').trim();
+            if (!text) return;
+
+            const btn = document.getElementById('feedback-submit-btn');
+            if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
+
+            const existing = feedbackData.suggestions || [];
+            const newItem = {
+                userId: currentUser.id,
+                text,
+                ts: Date.now(),
+                status: 'open'
+            };
+            await setDoc(feedbackRef(), { suggestions: [...existing, newItem] }, { merge: true });
+
+            if (btn) { btn.disabled = false; btn.textContent = 'Submit'; }
+            closeFeedbackModal();
+        }
+
+        async function toggleFeedbackStatus(index) {
+            if (!currentUser || currentUser.id !== 'dan_m') return;
+            const suggestions = [...(feedbackData.suggestions || [])];
+            if (!suggestions[index]) return;
+            suggestions[index].status = suggestions[index].status === 'done' ? 'open' : 'done';
+            await setDoc(feedbackRef(), { suggestions }, { merge: true });
+        }
+
+        function renderFeedbackHub() {
+            const container = document.getElementById('feedback-list');
+            if (!container) return;
+            const suggestions = feedbackData.suggestions || [];
+            if (suggestions.length === 0) {
+                container.innerHTML = '<p class="text-sm text-gray-400 italic text-center py-4">No suggestions yet. Be the first!</p>';
+                return;
+            }
+            const isDev = currentUser && currentUser.id === 'dan_m';
+            const sorted = suggestions.map((s, i) => ({ ...s, _i: i })).sort((a, b) => {
+                if (a.status === 'done' && b.status !== 'done') return 1;
+                if (a.status !== 'done' && b.status === 'done') return -1;
+                return (b.ts || 0) - (a.ts || 0);
+            });
+
+            container.innerHTML = sorted.map(s => {
+                const user = users.find(u => u.id === s.userId);
+                const name = user ? user.name.split(' ')[0] : 'Unknown';
+                const icon = user ? user.icon : 'fa-user';
+                const date = s.ts ? new Date(s.ts).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '';
+                const done = s.status === 'done';
+                const statusBadge = done
+                    ? '<span class="text-[10px] bg-brand-100 text-brand-700 px-2 py-0.5 rounded-full font-bold shrink-0">Done</span>'
+                    : '<span class="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-bold shrink-0">Open</span>';
+                const devBtn = isDev
+                    ? `<button onclick="window.toggleFeedbackStatus(${s._i})" class="text-[10px] px-2 py-0.5 rounded-full border transition-colors shrink-0 ${done ? 'border-gray-300 text-gray-400 hover:border-amber-400 hover:text-amber-600' : 'border-brand-300 text-brand-600 hover:bg-brand-50'}">${done ? 'Reopen' : 'Mark Done'}</button>`
+                    : '';
+                return `<div class="p-3 rounded-xl border ${done ? 'bg-gray-50 border-gray-200 opacity-60' : 'bg-amber-50/50 border-amber-100'}">
+                    <div class="flex items-start gap-2.5">
+                        <div class="w-7 h-7 rounded-full ${done ? 'bg-gray-200 text-gray-400' : 'bg-amber-100 text-amber-600'} flex items-center justify-center shrink-0 text-xs mt-0.5">
+                            <i class="fa-solid ${icon}"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2 flex-wrap mb-1">
+                                <span class="text-xs font-semibold text-gray-800">${name}</span>
+                                <span class="text-[10px] text-gray-400">${date}</span>
+                                ${statusBadge}
+                                ${devBtn}
+                            </div>
+                            <p class="text-sm ${done ? 'text-gray-400 line-through' : 'text-gray-700'} leading-relaxed">${s.text}</p>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+    </script>
+</body>
+</html>
