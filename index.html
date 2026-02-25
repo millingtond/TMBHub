@@ -938,6 +938,7 @@
                     isAnonymous: auth.currentUser.isAnonymous
                 } : null;
             },
+            get bypassFirebaseAuth() { return bypassFirebaseAuth; },
             probeFirestoreRest,
             probeFirestoreRestAuthed
         };
@@ -986,6 +987,7 @@
         let forceAnonymousSignIn = false;
         let isRecoveringAuth = false;
         let hasRetriedAfterPermissionDenied = false;
+        let bypassFirebaseAuth = false;
 
         const GROUP_MILESTONES = [
             { id: 'flights', label: 'Flights Booked', icon: 'fa-plane' },
@@ -1058,8 +1060,9 @@
             if (!hasRetriedAfterPermissionDenied && !isRecoveringAuth) {
                 hasRetriedAfterPermissionDenied = true;
                 isRecoveringAuth = true;
-                forceAnonymousSignIn = true;
-                showFirestoreError(`Firestore access denied (${source}). Reconnecting with a fresh session...`);
+                bypassFirebaseAuth = true;
+                forceAnonymousSignIn = false;
+                showFirestoreError(`Firestore access denied (${source}). Reconnecting without Firebase Auth...`);
 
                 signOut(auth)
                     .catch((signOutErr) => console.warn('Auth reset sign-out failed:', signOutErr))
@@ -1067,53 +1070,72 @@
                 return;
             }
 
-            showFirestoreError(`Firestore access is still denied (${source}). Verify this page is connected to the same Firebase project/database where your Firestore rules were published.`);
+            showFirestoreError(`Firestore access is still denied (${source}). Verify Firestore rules allow reads/writes for authenticated users, or keep running in unauthenticated mode.`);
+        }
+
+        function hideAuthLoading() {
+            const authLoading = document.getElementById('auth-loading');
+            if (authLoading) {
+                authLoading.classList.add('opacity-0');
+                setTimeout(() => authLoading.classList.add('hidden'), 500);
+            }
+        }
+
+        function enterAppShell() {
+            hideAuthLoading();
+            const savedFighterId = localStorage.getItem('tmb_fighter_id');
+            if (savedFighterId) {
+                const fighterObj = users.find(u => u.id === savedFighterId);
+                if (fighterObj) {
+                    login(fighterObj, false);
+                    return;
+                }
+            }
+            renderLoginScreen();
         }
 
         // --- 2. AUTHENTICATION & INITIALIZATION ---
         onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                // Hide loading screen safely
-                const authLoading = document.getElementById('auth-loading');
-                if (authLoading) {
-                    authLoading.classList.add('opacity-0');
-                    setTimeout(() => authLoading.classList.add('hidden'), 500);
-                }
-                
-                // Check if user previously logged in
-                const savedFighterId = localStorage.getItem('tmb_fighter_id');
-                if (savedFighterId) {
-                    const fighterObj = users.find(u => u.id === savedFighterId);
-                    if (fighterObj) {
-                        login(fighterObj, false);
-                        return;
-                    }
-                }
-                renderLoginScreen();
-            } else {
+            if (user && bypassFirebaseAuth) {
                 try {
-                    const canUseCustomToken = !forceAnonymousSignIn
-                        && typeof __initial_auth_token !== 'undefined'
-                        && __initial_auth_token;
+                    await signOut(auth);
+                } catch (signOutErr) {
+                    console.warn('Sign-out failed while switching to unauthenticated mode:', signOutErr);
+                    enterAppShell();
+                }
+                return;
+            }
 
-                    if (canUseCustomToken) {
-                        try {
-                            await signInWithCustomToken(auth, __initial_auth_token);
-                        } catch (tokenError) {
-                            console.warn("Custom token sign-in failed, falling back to anonymous auth:", tokenError);
-                            await signInAnonymously(auth);
-                        }
-                    } else {
+            if (user) {
+                enterAppShell();
+                return;
+            }
+
+            if (bypassFirebaseAuth) {
+                enterAppShell();
+                return;
+            }
+
+            try {
+                const canUseCustomToken = !forceAnonymousSignIn
+                    && typeof __initial_auth_token !== 'undefined'
+                    && __initial_auth_token;
+
+                if (canUseCustomToken) {
+                    try {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } catch (tokenError) {
+                        console.warn("Custom token sign-in failed, falling back to anonymous auth:", tokenError);
                         await signInAnonymously(auth);
                     }
-                    forceAnonymousSignIn = false;
-                } catch (error) {
-                    console.error("Auth failed:", error);
-                    const authLoading = document.getElementById('auth-loading');
-                    if (authLoading) {
-                        authLoading.innerHTML = '<p class="text-red-500 font-bold p-4 text-center">Connection failed.<br><span class="text-sm font-normal">Check Firebase Auth settings.</span></p>';
-                    }
+                } else {
+                    await signInAnonymously(auth);
                 }
+                forceAnonymousSignIn = false;
+            } catch (error) {
+                console.warn("Auth failed; continuing without Firebase Auth:", error);
+                bypassFirebaseAuth = true;
+                enterAppShell();
             }
         });
 
