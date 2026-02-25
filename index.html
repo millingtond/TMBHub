@@ -901,6 +901,47 @@
         const milestonesRef = () => doc(db, sharedBase, 'milestones');
         const feedbackRef   = () => doc(db, sharedBase, 'feedback');
 
+        async function probeFirestoreRest(docPath = `${collectionPath}/debug_probe`) {
+            const encodedDocPath = docPath.split('/').map(encodeURIComponent).join('/');
+            const url = `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/(default)/documents/${encodedDocPath}?key=${firebaseConfig.apiKey}`;
+            try {
+                const res = await fetch(url);
+                const text = await res.text();
+                return { ok: res.ok, status: res.status, body: text.slice(0, 400) };
+            } catch (err) {
+                return { ok: false, status: -1, body: String(err) };
+            }
+        }
+
+        async function probeFirestoreRestAuthed(docPath = `${collectionPath}/debug_probe`) {
+            const encodedDocPath = docPath.split('/').map(encodeURIComponent).join('/');
+            const url = `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/(default)/documents/${encodedDocPath}?key=${firebaseConfig.apiKey}`;
+            try {
+                const token = auth.currentUser ? await auth.currentUser.getIdToken() : null;
+                const headers = token ? { Authorization: `Bearer ${token}` } : {};
+                const res = await fetch(url, { headers });
+                const text = await res.text();
+                return { ok: res.ok, status: res.status, hasToken: Boolean(token), body: text.slice(0, 400) };
+            } catch (err) {
+                return { ok: false, status: -1, hasToken: Boolean(auth.currentUser), body: String(err) };
+            }
+        }
+
+        window.__TMB_DEBUG = {
+            get firebaseConfig() { return firebaseConfig; },
+            get useInjectedFirebaseConfig() { return useInjectedFirebaseConfig; },
+            get collectionPath() { return collectionPath; },
+            get sharedBase() { return sharedBase; },
+            get authState() {
+                return auth.currentUser ? {
+                    uid: auth.currentUser.uid,
+                    isAnonymous: auth.currentUser.isAnonymous
+                } : null;
+            },
+            probeFirestoreRest,
+            probeFirestoreRestAuthed
+        };
+
         // --- 1. DATA & STATE ---
         const users = [
             { id: 'matt_b', name: 'Matt Brown', icon: 'fa-crown', desc: 'The Organiser' },
@@ -1018,7 +1059,7 @@
                 hasRetriedAfterPermissionDenied = true;
                 isRecoveringAuth = true;
                 forceAnonymousSignIn = true;
-                showFirestoreError('Firestore access was denied. Reconnecting with a fresh session...');
+                showFirestoreError(`Firestore access denied (${source}). Reconnecting with a fresh session...`);
 
                 signOut(auth)
                     .catch((signOutErr) => console.warn('Auth reset sign-out failed:', signOutErr))
@@ -1026,7 +1067,7 @@
                 return;
             }
 
-            showFirestoreError('Firestore access is still denied. Verify this page is connected to the same Firebase project/database where your Firestore rules were published.');
+            showFirestoreError(`Firestore access is still denied (${source}). Verify this page is connected to the same Firebase project/database where your Firestore rules were published.`);
         }
 
         // --- 2. AUTHENTICATION & INITIALIZATION ---
